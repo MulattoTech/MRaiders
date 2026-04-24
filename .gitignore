@@ -13,7 +13,9 @@ yarn-error.log*
 # Local editor / OS files
 Thumbs.db
 desktop.ini
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea/
 
 # Runtime and local config artifacts
