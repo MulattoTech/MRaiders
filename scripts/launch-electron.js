@@ -4,11 +4,17 @@ const {
   buildElectronArgs,
   buildElectronEnvironment
 } = require('./electron-runtime');
+const shouldUseXvfb = process.platform === 'linux' && !process.env.DISPLAY;
+const electronArgs = buildElectronArgs(process.argv.slice(2));
 
-const child = spawn(electronBinary, buildElectronArgs(process.argv.slice(2)), {
-  env: buildElectronEnvironment(),
-  stdio: 'inherit'
-});
+const child = spawn(
+  shouldUseXvfb ? 'xvfb-run' : electronBinary,
+  shouldUseXvfb ? ['-a', electronBinary, ...electronArgs] : electronArgs,
+  {
+    env: buildElectronEnvironment(),
+    stdio: 'inherit'
+  }
+);
 
 child.on('exit', (code, signal) => {
   if (signal) {

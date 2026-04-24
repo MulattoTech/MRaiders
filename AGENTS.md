@@ -67,6 +67,8 @@ Prefer this order:
    - commit completed work if appropriate,
    - write a short note explaining why the rebuild is required.
 6. If a rebuild can wait, continue working and leave a note in `DEVCONTAINER_REBUILD_REQUIRED.md`.
+7. Prefer putting repeatable Codespaces setup into `scripts/bootstrap-codespace.sh` and calling it from `postCreateCommand` instead of scattering setup across one-off manual steps.
+8. If a devcontainer file changes but the current Codespace can still continue safely, do **not** stop work just to apply it immediately. Let the change take effect on the next rebuild or new Codespace.
 
 When a rebuild is required, create or update `DEVCONTAINER_REBUILD_REQUIRED.md` with:
 
