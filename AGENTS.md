@@ -47,6 +47,37 @@ This project is developed in GitHub Codespaces. Treat the Codespace container as
 - Never suggest or implement any form of game memory access.
 - Never use deprecated or high-risk libraries.
 
+## Dev container rebuild policy
+
+This project runs in GitHub Codespaces.
+
+Avoid interrupting active development with unnecessary dev container rebuilds.
+
+Only modify `.devcontainer/`, `devcontainer.json`, Dockerfiles, Codespaces features, or container-level setup when the change is truly needed for repeatable project setup, missing system dependencies, browser automation dependencies, build tooling, test tooling, or long-term developer environment stability.
+
+Prefer this order:
+
+1. First install or test tools in the current Codespace session when possible.
+2. If the tool/dependency is clearly required long-term, then persist it into `.devcontainer/devcontainer.json`, a Dockerfile, or a setup script.
+3. Batch dev container changes together instead of making many small rebuild-triggering edits.
+4. Do not request or trigger a rebuild in the middle of active work unless the current task cannot continue without it.
+5. Before requesting a rebuild:
+   - save all files,
+   - run any safe checks that do not require the rebuild,
+   - commit completed work if appropriate,
+   - write a short note explaining why the rebuild is required.
+6. If a rebuild can wait, continue working and leave a note in `DEVCONTAINER_REBUILD_REQUIRED.md`.
+
+When a rebuild is required, create or update `DEVCONTAINER_REBUILD_REQUIRED.md` with:
+
+- why the rebuild is needed,
+- which file changed,
+- what the rebuild will enable,
+- whether it is required now or can wait,
+- what command/check should be run after rebuild.
+
+Do not ask the user to rebuild unless the rebuild is needed now.
+
 ## Quality checks
 
 After meaningful changes, run the most relevant available checks, such as:
