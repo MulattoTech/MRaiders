@@ -4,7 +4,8 @@
 
 `main.js` owns the overlay lifecycle:
 
-- creates the transparent Electron window
+- creates the transparent game overlay window
+- creates the separate second-monitor companion window
 - keeps it always on top with `screen-saver` priority
 - enables click-through by default with `setIgnoreMouseEvents(true, { forward: true })`
 - registers global hotkeys for `F8`, `F9`, and `F10`
@@ -22,9 +23,18 @@ Implementation:
 - `scripts/find-arc-raiders-window.ps1` calls basic `user32.dll` window APIs
 - no hooks, no injection, no memory reads, no frame capture
 
+## Views
+
+The app can run two independent views at the same time:
+
+- `Game Overlay`: transparent, click-through, follows the Arc Raiders window on Windows
+- `Second Monitor View`: normal Electron window intended for another display and safe to run without the overlay
+
+Both views share the same static marker data, map selection, and calibration controls, but each view can be toggled on or off separately.
+
 ## Renderer
 
-`renderer.js` only draws static dots and optional labels on a transparent canvas. There is no animation loop beyond browser repaint scheduling when state changes, which keeps GPU/CPU usage very low.
+`renderer.js` draws static dots and optional labels on a canvas and adapts the presentation based on which window loaded it. There is no animation loop beyond browser repaint scheduling when state changes, which keeps GPU/CPU usage very low.
 
 ## Calibration Flow
 

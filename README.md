@@ -1,10 +1,11 @@
-# Arc Raiders Hurricane / First Wave Cache Overlay
+# Arc Raiders Hurricane / First Wave Cache Companion
 
-This project is a lightweight Electron companion overlay for **Arc Raiders** that shows only **static, community-style cache candidate markers**. It does **not** read memory, hook the game, inject code, scrape packets, or do any real-time detection.
+This project is a lightweight Electron companion for **Arc Raiders** that shows only **static, community-style cache candidate markers**. It supports both a game overlay view and a second-monitor companion view. It does **not** read memory, hook the game, inject code, scrape packets, or do any real-time detection.
 
 ## Safety Model
 
 - Transparent external overlay only
+- Separate second-monitor companion window using the same safe static data
 - Title-based window alignment only
 - Static JSON data loaded from `/data`
 - No process memory access
@@ -14,12 +15,14 @@ This project is a lightweight Electron companion overlay for **Arc Raiders** tha
 ## Features
 
 - Transparent, click-through, always-on-top overlay window
+- Optional second-monitor window that can run independently from the overlay
 - Auto-follow for a visible matching Arc Raiders game window on Windows
 - Configurable window-title hint if the game caption differs on your setup
 - Searchable marker directory with notes and coordinate references inside the calibration panel
 - Keyboard calibration nudging with arrow keys and `Shift` for larger steps
+- Independent view toggles so the game overlay, second-monitor view, both, or neither can be active
 - Global hotkeys:
-  - `F8` toggle overlay visibility
+  - `F8` toggle game overlay visibility
   - `F9` cycle the active map layer
   - `F10` reload JSON data from disk
 - Tray menu for calibration, data reload, map switching, and quitting
@@ -36,7 +39,7 @@ This project is a lightweight Electron companion overlay for **Arc Raiders** tha
 
 ## Project Structure
 
-- `main.js` Electron main process, tray, hotkeys, persistence, and title-based tracking
+- `main.js` Electron main process, tray, hotkeys, persistence, title-based tracking, and second-monitor window management
 - `preload.js` safe IPC bridge for the renderer
 - `renderer.js` lightweight marker drawing and calibration UI logic
 - `styles.css` transparent overlay and panel styling
@@ -65,6 +68,13 @@ npm start
 
 Then use the tray icon to open the calibration panel and line the markers up over the Arc Raiders in-game map.
 
+The control panel lets you independently toggle:
+
+- the transparent game overlay
+- the second-monitor companion view
+
+That means you can run overlay only, second-monitor only, both, or neither while keeping the same shared marker data and calibration settings.
+
 ## Checks
 
 ```powershell
@@ -85,9 +95,10 @@ This repo includes a basic `.devcontainer` so it can be opened in GitHub Codespa
 
 - Use Codespaces for editing, dependency installs, documentation, and general project work
 - `npm start` launches Electron through a Codespaces-aware wrapper that clears `ELECTRON_RUN_AS_NODE`
-- The devcontainer post-create step installs the Linux libraries Electron needs for `npm start` and `npm run smoke`
+- `scripts/bootstrap-codespace.sh` is the repeatable Codespaces bootstrap entry point and is wired into `postCreateCommand`
+- The bootstrap step installs the Linux libraries Electron needs for `npm start` and `npm run smoke`
 - Use a local Windows machine for final Electron overlay validation
-- Transparent click-through behavior, global hotkeys, and Arc Raiders window alignment should be tested locally
+- Transparent click-through behavior, global hotkeys, Arc Raiders window alignment, and second-monitor placement should be tested locally
 
 ## Packaging
 

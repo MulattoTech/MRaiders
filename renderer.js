@@ -3,8 +3,14 @@
   const context = canvas.getContext('2d');
   const statusChip = document.getElementById('status-chip');
   const calibrationShell = document.getElementById('calibration-shell');
+  const initialWindowRole =
+    new URLSearchParams(window.location.search).get('display') === 'companion'
+      ? 'companion'
+      : 'overlay';
 
   const controls = {
+    overlayVisibleInput: document.getElementById('overlay-visible-input'),
+    companionVisibleInput: document.getElementById('companion-visible-input'),
     mapSelect: document.getElementById('map-select'),
     markerSearchInput: document.getElementById('marker-search-input'),
     clearMarkerSearchButton: document.getElementById(
@@ -24,9 +30,11 @@
     closePanelButton: document.getElementById('close-panel'),
     resetCalibrationButton: document.getElementById('reset-calibration-button'),
     reloadDataButton: document.getElementById('reload-data-button'),
+    windowModeStatus: document.getElementById('window-mode-status'),
     mapDescription: document.getElementById('map-description'),
     markerCount: document.getElementById('marker-count'),
     trackingStatus: document.getElementById('tracking-status'),
+    companionStatus: document.getElementById('companion-status'),
     dataSource: document.getElementById('data-source'),
     markerSearchSummary: document.getElementById('marker-search-summary'),
     markerList: document.getElementById('marker-list')
@@ -36,7 +44,8 @@
     overlayState: null,
     renderQueued: false,
     syncingControls: false,
-    markerSearch: ''
+    markerSearch: '',
+    windowRole: initialWindowRole
   };
 
   const SETTING_LIMITS = {
@@ -47,6 +56,8 @@
     scaleX: { min: 0.25, max: 2.5 },
     scaleY: { min: 0.25, max: 2.5 }
   };
+
+  applyWindowRoleClass(uiState.windowRole);
 
   function queueRender() {
     if (uiState.renderQueued) {
@@ -70,6 +81,13 @@
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+
+  function applyWindowRoleClass(windowRole) {
+    document.body.classList.toggle(
+      'window-role--companion',
+      windowRole === 'companion'
+    );
   }
 
   function normalizeSearchTerm(value) {
@@ -197,13 +215,16 @@
     const height = window.innerHeight;
     context.clearRect(0, 0, width, height);
 
-    if (!uiState.overlayState.settings.visible) {
+    if (!uiState.overlayState.status.currentWindowVisible) {
       return;
     }
 
     drawMarkers(width, height, uiState.overlayState);
 
-    if (uiState.overlayState.status.calibrationMode) {
+    if (
+      uiState.overlayState.status.calibrationMode &&
+      uiState.overlayState.status.windowRole === 'overlay'
+    ) {
       drawCalibrationFrame(width, height);
     }
   }
@@ -217,9 +238,11 @@
     const matchingSpawns = getMatchingSpawns(activeMap);
     const hasLoadError = Boolean(activeMap.loadError);
     const shouldShowChip =
-      status.calibrationMode ||
-      (status.followGameWindow && !status.trackedWindow) ||
-      hasLoadError;
+      hasLoadError ||
+      (status.windowRole === 'overlay' &&
+        (status.calibrationMode ||
+          (status.followGameWindow && !status.trackedWindow))) ||
+      (status.windowRole === 'companion' && !status.multipleDisplaysAvailable);
 
     statusChip.hidden = !shouldShowChip;
     if (!shouldShowChip) {
@@ -231,9 +254,17 @@
       ? ` · Filter ${matchingSpawns.length}/${activeMap.spawns.length}`
       : '';
 
-    statusChip.textContent = hasLoadError
-      ? `${activeMap.name} · Data load error: ${activeMap.loadError}`
-      : `${activeMap.name} · ${activeMap.spawns.length} markers${filterMessage} · ${status.trackingMessage}`;
+    if (hasLoadError) {
+      statusChip.textContent = `${activeMap.name} · Data load error: ${activeMap.loadError}`;
+      return;
+    }
+
+    if (status.windowRole === 'companion') {
+      statusChip.textContent = `${status.windowLabel} · ${activeMap.spawns.length} markers${filterMessage} · ${status.companionMessage}`;
+      return;
+    }
+
+    statusChip.textContent = `${activeMap.name} · ${activeMap.spawns.length} markers${filterMessage} · ${status.trackingMessage}`;
   }
 
   function syncSelectOptions(maps, activeMapId) {
@@ -308,11 +339,17 @@
     const { activeMap, maps, settings, status } = uiState.overlayState;
 
     uiState.syncingControls = true;
+    uiState.windowRole = status.windowRole || uiState.windowRole;
+
+    applyWindowRoleClass(uiState.windowRole);
+    document.title = `${status.windowLabel} | Arc Raiders Cache Companion`;
 
     syncSelectOptions(maps, activeMap.id);
     if (document.activeElement !== controls.markerSearchInput) {
       controls.markerSearchInput.value = uiState.markerSearch;
     }
+    controls.overlayVisibleInput.checked = Boolean(status.overlayVisible);
+    controls.companionVisibleInput.checked = Boolean(status.companionVisible);
     controls.opacityRange.value = String(settings.opacity);
     controls.opacityOutput.textContent = `${Math.round(settings.opacity * 100)}%`;
     controls.markerSizeRange.value = String(settings.markerSize);
@@ -325,12 +362,16 @@
     controls.followWindowInput.checked = Boolean(settings.followGameWindow);
     controls.windowTitleHintInput.value = settings.windowTitleHint || '';
 
+    controls.windowModeStatus.textContent = `${status.windowLabel} is currently open. Game overlay: ${
+      status.overlayVisible ? 'on' : 'off'
+    } · Second monitor view: ${status.companionVisible ? 'on' : 'off'}.`;
     controls.mapDescription.textContent =
       activeMap.description || `${activeMap.name} marker layer.`;
     controls.markerCount.textContent = activeMap.loadError
       ? `Could not load ${activeMap.name}: ${activeMap.loadError}`
       : `Loaded ${activeMap.spawns.length} static marker(s) from ${activeMap.name}.`;
     controls.trackingStatus.textContent = status.trackingMessage;
+    controls.companionStatus.textContent = status.companionMessage;
     controls.dataSource.textContent = activeMap.loadError
       ? 'Source unavailable until the JSON loads successfully.'
       : `Source: ${activeMap.source}${activeMap.updatedAt ? ` · Updated ${activeMap.updatedAt}` : ''}`;
@@ -447,6 +488,14 @@
   }
 
   function bindControls() {
+    controls.overlayVisibleInput.addEventListener('change', async (event) => {
+      await persistPatch({ visible: event.target.checked });
+    });
+
+    controls.companionVisibleInput.addEventListener('change', async (event) => {
+      await persistPatch({ companionVisible: event.target.checked });
+    });
+
     controls.mapSelect.addEventListener('change', async (event) => {
       await persistPatch({ activeMapId: event.target.value });
     });

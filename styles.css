@@ -28,11 +28,28 @@ body {
   position: relative;
 }
 
+body.window-role--companion {
+  background:
+    radial-gradient(circle at top, rgba(255, 123, 87, 0.16), transparent 24%),
+    radial-gradient(
+      circle at bottom left,
+      rgba(89, 200, 255, 0.14),
+      transparent 28%
+    ),
+    #09111b;
+}
+
 canvas {
   position: fixed;
   inset: 0;
   display: block;
   pointer-events: none;
+}
+
+body.window-role--companion canvas {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%),
+    transparent;
 }
 
 .status-chip {
@@ -216,6 +233,42 @@ canvas {
   width: 18px;
   height: 18px;
   accent-color: var(--accent);
+}
+
+.checkbox-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 126px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    rgba(255, 255, 255, 0.03);
+}
+
+.checkbox-card input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.checkbox-card__title {
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.checkbox-card__body {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .panel-actions {

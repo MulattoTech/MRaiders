@@ -24,8 +24,8 @@
       >
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Static Community Overlay</p>
-            <h1>Arc Raiders Cache Calibration</h1>
+            <p class="eyebrow">Static Community Companion</p>
+            <h1>Arc Raiders View Controls</h1>
           </div>
           <button id="close-panel" class="button button--ghost" type="button">
             Close
@@ -33,6 +33,24 @@
         </div>
 
         <div class="panel-grid">
+          <div class="field-row">
+            <label class="checkbox-card">
+              <input id="overlay-visible-input" type="checkbox" />
+              <span class="checkbox-card__title">Game Overlay</span>
+              <span class="checkbox-card__body">
+                Transparent click-through overlay over the Arc Raiders window.
+              </span>
+            </label>
+
+            <label class="checkbox-card">
+              <input id="companion-visible-input" type="checkbox" />
+              <span class="checkbox-card__title">Second Monitor View</span>
+              <span class="checkbox-card__body">
+                Separate map window you can keep on another screen.
+              </span>
+            </label>
+          </div>
+
           <label class="field">
             <span>Map Layer</span>
             <select id="map-select"></select>
@@ -184,12 +202,14 @@
         </section>
 
         <div class="panel-meta">
+          <p id="window-mode-status" class="meta-line"></p>
           <p id="map-description" class="meta-line"></p>
           <p id="marker-count" class="meta-line"></p>
           <p id="tracking-status" class="meta-line"></p>
+          <p id="companion-status" class="meta-line"></p>
           <p id="data-source" class="meta-line"></p>
           <p class="meta-line">
-            Global hotkeys: <strong>F8</strong> toggle overlay,
+            Global hotkeys: <strong>F8</strong> toggle the game overlay,
             <strong>F9</strong> cycle map, <strong>F10</strong> reload data.
           </p>
           <p class="meta-line">

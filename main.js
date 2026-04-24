@@ -8,6 +8,7 @@ const {
   Menu,
   Tray,
   nativeImage,
+  screen,
   shell
 } = require('electron');
 const windowStateKeeper = require('electron-window-state');
@@ -51,13 +52,18 @@ app.on('second-instance', () => {
 });
 
 let overlayWindow = null;
+let companionWindow = null;
 let tray = null;
 let store = null;
 let mapCache = new Map();
 let calibrationMode = false;
 let trackedWindow = null;
 let trackerTimer = null;
-let lastBroadcastSignature = '';
+let isQuitting = false;
+let lastBroadcastSignatures = {
+  overlay: '',
+  companion: ''
+};
 
 async function createStore() {
   const { default: Store } = await import('electron-store');
@@ -79,7 +85,7 @@ function loadMapData() {
   mapCache = loadAllMapData(DATA_DIRECTORY);
 }
 
-function getStatePayload() {
+function getStatePayload(windowRole) {
   return buildOverlayState({
     settings: getSettings(),
     mapCache,
@@ -87,8 +93,14 @@ function getStatePayload() {
     trackedWindow,
     dataDirectory: DATA_DIRECTORY,
     hotkeys: HOTKEYS,
-    platform: process.platform
+    platform: process.platform,
+    windowRole,
+    displayCount: screen.getAllDisplays().length
   });
+}
+
+function getActiveMap(settings = getSettings()) {
+  return MAPS.find((map) => map.id === getActiveMapId(settings)) || MAPS[0];
 }
 
 function refreshTray() {
@@ -97,16 +109,19 @@ function refreshTray() {
   }
 
   const settings = getSettings();
-  const activeMap =
-    MAPS.find((map) => map.id === getActiveMapId(settings)) || MAPS[0];
+  const activeMap = getActiveMap(settings);
   const trackingLabel = trackedWindow
-    ? `Tracking: ${trackedWindow.title}`
+    ? `Overlay tracking: ${trackedWindow.title}`
     : settings.followGameWindow
-      ? `Tracking: waiting for ${settings.windowTitleHint}`
-      : 'Tracking: manual positioning';
+      ? `Overlay tracking: waiting for ${settings.windowTitleHint}`
+      : 'Overlay tracking: manual positioning';
+  const viewLabel = [
+    settings.visible ? 'game overlay on' : 'game overlay off',
+    settings.companionVisible ? 'second monitor on' : 'second monitor off'
+  ].join(' · ');
 
   tray.setToolTip(
-    `Arc Raiders Cache Overlay\n${activeMap.name}\n${trackingLabel}`
+    `Arc Raiders Cache Companion\n${activeMap.name}\n${trackingLabel}\n${viewLabel}`
   );
   tray.setContextMenu(
     Menu.buildFromTemplate([
@@ -118,12 +133,22 @@ function refreshTray() {
         label: trackingLabel,
         enabled: false
       },
+      {
+        label: `Views: ${viewLabel}`,
+        enabled: false
+      },
       { type: 'separator' },
       {
         label: settings.visible
-          ? `Hide Overlay (${HOTKEYS.toggleVisibility})`
-          : `Show Overlay (${HOTKEYS.toggleVisibility})`,
+          ? `Hide Game Overlay (${HOTKEYS.toggleVisibility})`
+          : `Show Game Overlay (${HOTKEYS.toggleVisibility})`,
         click: () => setOverlayVisibility(!getSettings().visible)
+      },
+      {
+        label: settings.companionVisible
+          ? 'Hide Second Monitor View'
+          : 'Show Second Monitor View',
+        click: () => setCompanionVisibility(!getSettings().companionVisible)
       },
       {
         label: calibrationMode
@@ -177,27 +202,34 @@ function refreshTray() {
   );
 }
 
-function broadcastState(force = false) {
-  if (!overlayWindow || overlayWindow.isDestroyed()) {
+function broadcastWindowState(window, windowRole, force = false) {
+  if (!window || window.isDestroyed()) {
     return;
   }
 
-  const state = getStatePayload();
+  const state = getStatePayload(windowRole);
   const signature = JSON.stringify({
     settings: state.settings,
     activeMapId: state.activeMap.id,
     markerCounts: state.maps.map((map) => map.markerCount),
     trackedWindow: state.status.trackedWindow,
-    calibrationMode: state.status.calibrationMode
+    calibrationMode: state.status.calibrationMode,
+    currentWindowVisible: state.status.currentWindowVisible,
+    windowRole
   });
 
-  if (!force && signature === lastBroadcastSignature) {
+  if (!force && signature === lastBroadcastSignatures[windowRole]) {
     return;
   }
 
-  lastBroadcastSignature = signature;
+  lastBroadcastSignatures[windowRole] = signature;
+  window.webContents.send('overlay:state', state);
+}
+
+function broadcastState(force = false) {
   refreshTray();
-  overlayWindow.webContents.send('overlay:state', state);
+  broadcastWindowState(overlayWindow, 'overlay', force);
+  broadcastWindowState(companionWindow, 'companion', force);
 }
 
 function setOverlayVisibility(nextVisible) {
@@ -230,6 +262,28 @@ function setOverlayVisibility(nextVisible) {
   }
 
   applyInteractivityMode();
+  broadcastState(true);
+  return visible;
+}
+
+function setCompanionVisibility(nextVisible) {
+  const visible = Boolean(nextVisible);
+
+  if (store) {
+    store.set('companionVisible', visible);
+  }
+
+  if (!companionWindow || companionWindow.isDestroyed()) {
+    return visible;
+  }
+
+  if (!visible) {
+    companionWindow.hide();
+  } else {
+    companionWindow.show();
+    companionWindow.focus();
+  }
+
   broadcastState(true);
   return visible;
 }
@@ -287,12 +341,12 @@ function cycleMap() {
 async function reloadData() {
   loadMapData();
   broadcastState(true);
-  return getStatePayload();
+  return getStatePayload('overlay');
 }
 
 async function updateSettings(partial) {
   if (!store) {
-    return getStatePayload();
+    return getStatePayload('overlay');
   }
 
   const merged = sanitizeSettings({ ...getSettings(), ...partial });
@@ -305,8 +359,10 @@ async function updateSettings(partial) {
 
   if (Object.prototype.hasOwnProperty.call(partial, 'visible')) {
     setOverlayVisibility(merged.visible);
-  } else {
-    broadcastState(true);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(partial, 'companionVisible')) {
+    setCompanionVisibility(merged.companionVisible);
   }
 
   if (
@@ -326,7 +382,14 @@ async function updateSettings(partial) {
     broadcastState(true);
   }
 
-  return getStatePayload();
+  if (
+    !Object.prototype.hasOwnProperty.call(partial, 'visible') &&
+    !Object.prototype.hasOwnProperty.call(partial, 'companionVisible')
+  ) {
+    broadcastState(true);
+  }
+
+  return getStatePayload('overlay');
 }
 
 function nudgeCalibration(delta) {
@@ -482,6 +545,21 @@ function stopTrackingLoop() {
   }
 }
 
+function getCompanionDefaultBounds() {
+  const displays = screen.getAllDisplays();
+  const preferredDisplay = displays[1] || displays[0];
+  const workArea = preferredDisplay.workArea || preferredDisplay.bounds;
+  const width = Math.max(900, Math.min(1600, workArea.width - 80));
+  const height = Math.max(600, Math.min(1000, workArea.height - 80));
+
+  return {
+    x: workArea.x + 40,
+    y: workArea.y + 40,
+    width,
+    height
+  };
+}
+
 function createOverlayWindow() {
   const primaryDisplayDefaults = windowStateKeeper({
     defaultWidth: 1600,
@@ -490,7 +568,7 @@ function createOverlayWindow() {
   });
 
   overlayWindow = new BrowserWindow({
-    title: 'First Wave Cache Overlay',
+    title: 'Arc Raiders Game Overlay',
     x: primaryDisplayDefaults.x,
     y: primaryDisplayDefaults.y,
     width: primaryDisplayDefaults.width,
@@ -521,7 +599,9 @@ function createOverlayWindow() {
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1);
   overlayWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  overlayWindow.loadFile(path.join(__dirname, 'index.html'));
+  overlayWindow.loadFile(path.join(__dirname, 'index.html'), {
+    query: { display: 'overlay' }
+  });
 
   overlayWindow.on('closed', () => {
     overlayWindow = null;
@@ -553,40 +633,125 @@ function createOverlayWindow() {
   });
 }
 
-ipcMain.handle('overlay:get-bootstrap', () => getStatePayload());
-ipcMain.handle('overlay:update-settings', async (_event, partial) =>
-  updateSettings(partial)
+function createCompanionWindow() {
+  const defaultBounds = getCompanionDefaultBounds();
+  const companionWindowState = windowStateKeeper({
+    defaultWidth: defaultBounds.width,
+    defaultHeight: defaultBounds.height,
+    file: 'companion-window-state.json'
+  });
+
+  companionWindow = new BrowserWindow({
+    title: 'Arc Raiders Second Monitor View',
+    x: Number.isFinite(companionWindowState.x)
+      ? companionWindowState.x
+      : defaultBounds.x,
+    y: Number.isFinite(companionWindowState.y)
+      ? companionWindowState.y
+      : defaultBounds.y,
+    width: companionWindowState.width,
+    height: companionWindowState.height,
+    show: false,
+    transparent: false,
+    frame: true,
+    backgroundColor: '#0b1220',
+    alwaysOnTop: false,
+    fullscreenable: true,
+    focusable: true,
+    resizable: true,
+    movable: true,
+    skipTaskbar: false,
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false,
+      devTools: !IS_SMOKE_TEST
+    }
+  });
+
+  companionWindowState.manage(companionWindow);
+  companionWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  companionWindow.loadFile(path.join(__dirname, 'index.html'), {
+    query: { display: 'companion' }
+  });
+
+  companionWindow.on('close', (event) => {
+    if (isQuitting || companionWindow?.isDestroyed()) {
+      return;
+    }
+
+    event.preventDefault();
+    setCompanionVisibility(false);
+  });
+
+  companionWindow.on('closed', () => {
+    companionWindow = null;
+  });
+
+  companionWindow.webContents.on('did-finish-load', () => {
+    if (getSettings().companionVisible) {
+      companionWindow.show();
+    }
+
+    broadcastState(true);
+  });
+}
+
+function getSenderRole(webContents) {
+  return webContents === companionWindow?.webContents ? 'companion' : 'overlay';
+}
+
+ipcMain.handle('overlay:get-bootstrap', (event) =>
+  getStatePayload(getSenderRole(event.sender))
 );
-ipcMain.handle('overlay:toggle-panel', async (_event, nextMode) => {
-  setCalibrationMode(nextMode);
-  return getStatePayload();
+ipcMain.handle('overlay:update-settings', async (event, partial) => {
+  await updateSettings(partial);
+  return getStatePayload(getSenderRole(event.sender));
 });
-ipcMain.handle('overlay:reset-calibration', async () => {
+ipcMain.handle('overlay:toggle-panel', async (event, nextMode) => {
+  setCalibrationMode(nextMode);
+  return getStatePayload(getSenderRole(event.sender));
+});
+ipcMain.handle('overlay:reset-calibration', async (event) => {
   await updateSettings({
     xOffset: 0,
     yOffset: 0,
     scaleX: 1,
     scaleY: 1
   });
-  return getStatePayload();
+  return getStatePayload(getSenderRole(event.sender));
 });
-ipcMain.handle('overlay:nudge-calibration', async (_event, delta) =>
-  nudgeCalibration(delta)
-);
-ipcMain.handle('overlay:cycle-map', async () => cycleMap());
-ipcMain.handle('overlay:reload-data', async () => reloadData());
-ipcMain.handle('overlay:set-visibility', async (_event, nextVisible) => {
+ipcMain.handle('overlay:nudge-calibration', async (event, delta) => {
+  await nudgeCalibration(delta);
+  return getStatePayload(getSenderRole(event.sender));
+});
+ipcMain.handle('overlay:cycle-map', async (event) => {
+  await cycleMap();
+  return getStatePayload(getSenderRole(event.sender));
+});
+ipcMain.handle('overlay:reload-data', async (event) => {
+  await reloadData();
+  return getStatePayload(getSenderRole(event.sender));
+});
+ipcMain.handle('overlay:set-visibility', async (event, nextVisible) => {
   setOverlayVisibility(nextVisible);
-  return getStatePayload();
+  return getStatePayload(getSenderRole(event.sender));
 });
 
 app.whenReady().then(async () => {
   await createStore();
   loadMapData();
   createOverlayWindow();
+  createCompanionWindow();
   createTray();
   registerShortcuts();
   startTrackingLoop();
+});
+
+app.on('before-quit', () => {
+  isQuitting = true;
 });
 
 app.on('will-quit', () => {
@@ -603,7 +768,10 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (!overlayWindow) {
     createOverlayWindow();
-    return;
+  }
+
+  if (!companionWindow) {
+    createCompanionWindow();
   }
 
   setOverlayVisibility(true);

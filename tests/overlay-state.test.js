@@ -31,17 +31,25 @@ test('buildOverlayState includes marker counts and status metadata', () => {
     ]
   ]);
   const state = buildOverlayState({
-    settings: sanitizeSettings({ activeMapId: MAPS[0].id }),
+    settings: sanitizeSettings({
+      activeMapId: MAPS[0].id,
+      companionVisible: true
+    }),
     mapCache,
     calibrationMode: false,
     trackedWindow: null,
     dataDirectory: '/tmp/data',
     hotkeys: { toggleVisibility: 'F8', cycleMap: 'F9', reloadData: 'F10' },
-    platform: 'win32'
+    platform: 'win32',
+    windowRole: 'companion',
+    displayCount: 2
   });
 
   assert.equal(state.activeMap.id, MAPS[0].id);
   assert.equal(state.maps[0].markerCount, 1);
   assert.equal(state.status.dataDirectory, '/tmp/data');
   assert.equal(state.status.hotkeys.toggleVisibility, 'F8');
+  assert.equal(state.status.currentWindowVisible, true);
+  assert.equal(state.status.windowRole, 'companion');
+  assert.equal(state.status.windowLabel, 'Second Monitor View');
 });
