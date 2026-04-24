@@ -21,7 +21,7 @@ body {
   overflow: hidden;
   background: transparent;
   color: var(--text-main);
-  font-family: Bahnschrift, "Trebuchet MS", Tahoma, sans-serif;
+  font-family: Bahnschrift, 'Trebuchet MS', Tahoma, sans-serif;
 }
 
 body {
@@ -65,8 +65,16 @@ canvas {
   justify-items: end;
   padding: 24px;
   background:
-    radial-gradient(circle at top right, rgba(255, 123, 87, 0.14), transparent 24%),
-    radial-gradient(circle at bottom left, rgba(110, 196, 255, 0.08), transparent 28%);
+    radial-gradient(
+      circle at top right,
+      rgba(255, 123, 87, 0.14),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(110, 196, 255, 0.08),
+      transparent 28%
+    );
   pointer-events: none;
 }
 
@@ -76,6 +84,7 @@ canvas {
 
 .settings-panel {
   width: min(420px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
   border: 1px solid var(--panel-edge);
   border-radius: 20px;
   background:
@@ -87,6 +96,7 @@ canvas {
     0 0 0 1px rgba(255, 255, 255, 0.04),
     0 0 48px var(--panel-glow);
   backdrop-filter: blur(22px);
+  overflow: auto;
   pointer-events: auto;
 }
 
@@ -179,6 +189,16 @@ canvas {
   gap: 10px;
 }
 
+.search-field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.search-field .button {
+  white-space: nowrap;
+}
+
 .range-field output {
   min-width: 54px;
   text-align: right;
@@ -204,12 +224,80 @@ canvas {
   padding: 18px 20px 0;
 }
 
+.marker-library {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.section-summary {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: right;
+}
+
+.marker-list {
+  display: grid;
+  gap: 10px;
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.marker-card,
+.empty-state {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    rgba(255, 255, 255, 0.03);
+  padding: 12px 14px;
+}
+
+.marker-card__title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.marker-card__notes,
+.marker-card__coords,
+.empty-state {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.marker-card__coords {
+  margin-top: 8px;
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+}
+
 .button {
   min-height: 42px;
   padding: 10px 14px;
   border: 1px solid rgba(255, 123, 87, 0.4);
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255, 123, 87, 0.22), rgba(255, 123, 87, 0.14));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 123, 87, 0.22),
+    rgba(255, 123, 87, 0.14)
+  );
   color: var(--text-main);
   font: inherit;
   font-weight: 700;
@@ -246,9 +334,19 @@ canvas {
   }
 
   .field-row,
-  .panel-actions {
+  .panel-actions,
+  .search-field {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .section-summary {
+    text-align: left;
   }
 
   .status-chip {

@@ -6,6 +6,10 @@
 
   const controls = {
     mapSelect: document.getElementById('map-select'),
+    markerSearchInput: document.getElementById('marker-search-input'),
+    clearMarkerSearchButton: document.getElementById(
+      'clear-marker-search-button'
+    ),
     opacityRange: document.getElementById('opacity-range'),
     opacityOutput: document.getElementById('opacity-output'),
     markerSizeRange: document.getElementById('marker-size-range'),
@@ -23,13 +27,16 @@
     mapDescription: document.getElementById('map-description'),
     markerCount: document.getElementById('marker-count'),
     trackingStatus: document.getElementById('tracking-status'),
-    dataSource: document.getElementById('data-source')
+    dataSource: document.getElementById('data-source'),
+    markerSearchSummary: document.getElementById('marker-search-summary'),
+    markerList: document.getElementById('marker-list')
   };
 
   const uiState = {
     overlayState: null,
     renderQueued: false,
-    syncingControls: false
+    syncingControls: false,
+    markerSearch: ''
   };
 
   const SETTING_LIMITS = {
@@ -65,6 +72,35 @@
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
 
+  function normalizeSearchTerm(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase();
+  }
+
+  function markerMatchesSearch(spawn, searchTerm) {
+    if (!searchTerm) {
+      return true;
+    }
+
+    const haystack = [spawn.label, spawn.notes, spawn.id]
+      .join(' ')
+      .toLowerCase();
+    return haystack.includes(searchTerm);
+  }
+
+  function getMatchingSpawns(activeMap) {
+    const searchTerm = normalizeSearchTerm(uiState.markerSearch);
+
+    if (!searchTerm) {
+      return activeMap.spawns;
+    }
+
+    return activeMap.spawns.filter((spawn) =>
+      markerMatchesSearch(spawn, searchTerm)
+    );
+  }
+
   function drawCalibrationFrame(width, height) {
     context.save();
     context.strokeStyle = 'rgba(255, 255, 255, 0.28)';
@@ -83,44 +119,71 @@
     context.restore();
   }
 
-  function drawMarkers(width, height, overlayState) {
-    const { activeMap, settings } = overlayState;
+  function drawMarker(
+    width,
+    height,
+    spawn,
+    settings,
+    accentColor,
+    alphaMultiplier
+  ) {
     const markerRadius = settings.markerSize;
-    const accentColor = activeMap.accentColor || '#ff7b57';
+    const x = spawn.x * width * settings.scaleX + settings.xOffset;
+    const y = spawn.y * height * settings.scaleY + settings.yOffset;
 
     context.save();
-    context.globalAlpha = settings.opacity;
+    context.globalAlpha = settings.opacity * alphaMultiplier;
+    context.beginPath();
+    context.fillStyle = accentColor;
+    context.shadowColor = accentColor;
+    context.shadowBlur = alphaMultiplier >= 1 ? 18 : 8;
+    context.arc(x, y, markerRadius, 0, Math.PI * 2);
+    context.fill();
 
-    for (const spawn of activeMap.spawns) {
-      const x = spawn.x * width * settings.scaleX + settings.xOffset;
-      const y = spawn.y * height * settings.scaleY + settings.yOffset;
+    context.beginPath();
+    context.lineWidth = 2;
+    context.strokeStyle = 'rgba(248, 243, 233, 0.95)';
+    context.arc(x, y, Math.max(4, markerRadius - 2), 0, Math.PI * 2);
+    context.stroke();
 
-      context.beginPath();
-      context.fillStyle = accentColor;
-      context.shadowColor = accentColor;
-      context.shadowBlur = 18;
-      context.arc(x, y, markerRadius, 0, Math.PI * 2);
-      context.fill();
-
-      context.beginPath();
-      context.lineWidth = 2;
-      context.strokeStyle = 'rgba(248, 243, 233, 0.95)';
-      context.arc(x, y, Math.max(4, markerRadius - 2), 0, Math.PI * 2);
-      context.stroke();
-
-      if (settings.showLabels) {
-        context.shadowBlur = 0;
-        context.font = '600 13px Bahnschrift, Tahoma, sans-serif';
-        context.textBaseline = 'middle';
-        context.fillStyle = '#f8f3e9';
-        context.strokeStyle = 'rgba(14, 20, 28, 0.88)';
-        context.lineWidth = 4;
-        context.strokeText(spawn.label, x + markerRadius + 10, y);
-        context.fillText(spawn.label, x + markerRadius + 10, y);
-      }
+    if (settings.showLabels && alphaMultiplier >= 1) {
+      context.shadowBlur = 0;
+      context.font = '600 13px Bahnschrift, Tahoma, sans-serif';
+      context.textBaseline = 'middle';
+      context.fillStyle = '#f8f3e9';
+      context.strokeStyle = 'rgba(14, 20, 28, 0.88)';
+      context.lineWidth = 4;
+      context.strokeText(spawn.label, x + markerRadius + 10, y);
+      context.fillText(spawn.label, x + markerRadius + 10, y);
     }
 
     context.restore();
+  }
+
+  function drawMarkers(width, height, overlayState) {
+    const { activeMap, settings } = overlayState;
+    const accentColor = activeMap.accentColor || '#ff7b57';
+    const searchTerm = normalizeSearchTerm(uiState.markerSearch);
+    const matchingSpawns = getMatchingSpawns(activeMap);
+
+    if (!searchTerm) {
+      for (const spawn of activeMap.spawns) {
+        drawMarker(width, height, spawn, settings, accentColor, 1);
+      }
+      return;
+    }
+
+    const matchingIds = new Set(matchingSpawns.map((spawn) => spawn.id));
+
+    for (const spawn of activeMap.spawns) {
+      if (!matchingIds.has(spawn.id)) {
+        drawMarker(width, height, spawn, settings, accentColor, 0.18);
+      }
+    }
+
+    for (const spawn of matchingSpawns) {
+      drawMarker(width, height, spawn, settings, accentColor, 1);
+    }
   }
 
   function renderOverlay() {
@@ -134,15 +197,13 @@
     const height = window.innerHeight;
     context.clearRect(0, 0, width, height);
 
-    const overlayState = uiState.overlayState;
-
-    if (!overlayState.settings.visible) {
+    if (!uiState.overlayState.settings.visible) {
       return;
     }
 
-    drawMarkers(width, height, overlayState);
+    drawMarkers(width, height, uiState.overlayState);
 
-    if (overlayState.status.calibrationMode) {
+    if (uiState.overlayState.status.calibrationMode) {
       drawCalibrationFrame(width, height);
     }
   }
@@ -153,6 +214,7 @@
     }
 
     const { activeMap, status } = uiState.overlayState;
+    const matchingSpawns = getMatchingSpawns(activeMap);
     const hasLoadError = Boolean(activeMap.loadError);
     const shouldShowChip =
       status.calibrationMode ||
@@ -165,13 +227,19 @@
       return;
     }
 
+    const filterMessage = uiState.markerSearch
+      ? ` · Filter ${matchingSpawns.length}/${activeMap.spawns.length}`
+      : '';
+
     statusChip.textContent = hasLoadError
       ? `${activeMap.name} · Data load error: ${activeMap.loadError}`
-      : `${activeMap.name} · ${activeMap.spawns.length} markers · ${status.trackingMessage}`;
+      : `${activeMap.name} · ${activeMap.spawns.length} markers${filterMessage} · ${status.trackingMessage}`;
   }
 
   function syncSelectOptions(maps, activeMapId) {
-    const existingIds = Array.from(controls.mapSelect.options).map((option) => option.value);
+    const existingIds = Array.from(controls.mapSelect.options).map(
+      (option) => option.value
+    );
     const incomingIds = maps.map((map) => map.id);
 
     if (existingIds.join('|') !== incomingIds.join('|')) {
@@ -185,11 +253,51 @@
       );
     } else {
       maps.forEach((map, index) => {
-        controls.mapSelect.options[index].textContent = `${map.name} (${map.markerCount})`;
+        controls.mapSelect.options[index].textContent =
+          `${map.name} (${map.markerCount})`;
       });
     }
 
     controls.mapSelect.value = activeMapId;
+  }
+
+  function renderMarkerList(activeMap) {
+    const matchingSpawns = getMatchingSpawns(activeMap);
+
+    controls.markerSearchSummary.textContent = uiState.markerSearch
+      ? `${matchingSpawns.length} of ${activeMap.spawns.length} markers`
+      : `${activeMap.spawns.length} markers loaded`;
+
+    if (!matchingSpawns.length) {
+      const emptyState = document.createElement('p');
+      emptyState.className = 'empty-state';
+      emptyState.textContent = uiState.markerSearch
+        ? 'No markers match the current search.'
+        : 'No markers are available for this layer.';
+      controls.markerList.replaceChildren(emptyState);
+      return;
+    }
+
+    controls.markerList.replaceChildren(
+      ...matchingSpawns.map((spawn) => {
+        const card = document.createElement('article');
+        const title = document.createElement('h3');
+        const notes = document.createElement('p');
+        const coords = document.createElement('p');
+
+        card.className = 'marker-card';
+        title.className = 'marker-card__title';
+        notes.className = 'marker-card__notes';
+        coords.className = 'marker-card__coords';
+
+        title.textContent = spawn.label;
+        notes.textContent = spawn.notes || 'Static route reference point.';
+        coords.textContent = `${spawn.id} · x:${spawn.x.toFixed(3)} · y:${spawn.y.toFixed(3)}`;
+
+        card.append(title, notes, coords);
+        return card;
+      })
+    );
   }
 
   function updatePanel() {
@@ -202,6 +310,9 @@
     uiState.syncingControls = true;
 
     syncSelectOptions(maps, activeMap.id);
+    if (document.activeElement !== controls.markerSearchInput) {
+      controls.markerSearchInput.value = uiState.markerSearch;
+    }
     controls.opacityRange.value = String(settings.opacity);
     controls.opacityOutput.textContent = `${Math.round(settings.opacity * 100)}%`;
     controls.markerSizeRange.value = String(settings.markerSize);
@@ -214,7 +325,8 @@
     controls.followWindowInput.checked = Boolean(settings.followGameWindow);
     controls.windowTitleHintInput.value = settings.windowTitleHint || '';
 
-    controls.mapDescription.textContent = activeMap.description || `${activeMap.name} marker layer.`;
+    controls.mapDescription.textContent =
+      activeMap.description || `${activeMap.name} marker layer.`;
     controls.markerCount.textContent = activeMap.loadError
       ? `Could not load ${activeMap.name}: ${activeMap.loadError}`
       : `Loaded ${activeMap.spawns.length} static marker(s) from ${activeMap.name}.`;
@@ -224,9 +336,13 @@
       : `Source: ${activeMap.source}${activeMap.updatedAt ? ` · Updated ${activeMap.updatedAt}` : ''}`;
 
     calibrationShell.hidden = !status.calibrationMode;
-    calibrationShell.setAttribute('aria-hidden', status.calibrationMode ? 'false' : 'true');
+    calibrationShell.setAttribute(
+      'aria-hidden',
+      status.calibrationMode ? 'false' : 'true'
+    );
     document.body.classList.toggle('is-calibrating', status.calibrationMode);
 
+    renderMarkerList(activeMap);
     uiState.syncingControls = false;
   }
 
@@ -288,9 +404,67 @@
     queueRender();
   }
 
+  function isEditableTarget(target) {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    return Boolean(target.closest('input, textarea, select, button'));
+  }
+
+  async function handleCalibrationNudge(event) {
+    if (
+      !uiState.overlayState?.status.calibrationMode ||
+      isEditableTarget(event.target)
+    ) {
+      return false;
+    }
+
+    const step = event.shiftKey ? 10 : 1;
+    const delta = { xOffset: 0, yOffset: 0 };
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        delta.xOffset = -step;
+        break;
+      case 'ArrowRight':
+        delta.xOffset = step;
+        break;
+      case 'ArrowUp':
+        delta.yOffset = -step;
+        break;
+      case 'ArrowDown':
+        delta.yOffset = step;
+        break;
+      default:
+        return false;
+    }
+
+    event.preventDefault();
+    const nextState = await window.overlayApi.nudgeCalibration(delta);
+    handleState(nextState);
+    return true;
+  }
+
   function bindControls() {
     controls.mapSelect.addEventListener('change', async (event) => {
       await persistPatch({ activeMapId: event.target.value });
+    });
+
+    controls.markerSearchInput.addEventListener('input', (event) => {
+      uiState.markerSearch = event.target.value;
+      updatePanel();
+      updateStatusChip();
+      queueRender();
+    });
+
+    controls.clearMarkerSearchButton.addEventListener('click', () => {
+      uiState.markerSearch = '';
+      controls.markerSearchInput.value = '';
+      updatePanel();
+      updateStatusChip();
+      queueRender();
+      controls.markerSearchInput.focus();
     });
 
     controls.opacityRange.addEventListener('input', (event) => {
@@ -422,11 +596,17 @@
     });
 
     window.addEventListener('keydown', async (event) => {
-      if (event.key === 'Escape' && uiState.overlayState?.status.calibrationMode) {
+      if (
+        event.key === 'Escape' &&
+        uiState.overlayState?.status.calibrationMode
+      ) {
         event.preventDefault();
         const nextState = await window.overlayApi.togglePanel(false);
         handleState(nextState);
+        return;
       }
+
+      await handleCalibrationNudge(event);
     });
 
     window.addEventListener('resize', () => {

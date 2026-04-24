@@ -13,11 +13,12 @@ const {
 const windowStateKeeper = require('electron-window-state');
 const {
   MAPS,
-  MAPS_BY_ID,
   SETTINGS_SCHEMA,
   buildInitialSettings,
   sanitizeSettings
 } = require('./lib/defaults');
+const { loadAllMapData } = require('./lib/map-data');
+const { buildOverlayState, getActiveMapId } = require('./lib/overlay-state');
 const { getArcRaidersWindow } = require('./lib/window-probe');
 
 const APP_ID = 'com.openai.arc-raiders-static-cache-overlay';
@@ -28,6 +29,12 @@ const HOTKEYS = {
   cycleMap: 'F9',
   reloadData: 'F10'
 };
+const IS_SMOKE_TEST = process.env.ARC_OVERLAY_SMOKE === '1';
+
+if (IS_SMOKE_TEST) {
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch('disable-dev-shm-usage');
+}
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -63,128 +70,25 @@ async function createStore() {
 }
 
 function getSettings() {
-  return sanitizeSettings(store ? store.store : buildInitialSettings(__dirname));
-}
-
-function getActiveMapId() {
-  const settings = getSettings();
-  return MAPS_BY_ID[settings.activeMapId] ? settings.activeMapId : MAPS[0].id;
-}
-
-function sanitizeSpawn(map, spawn, index) {
-  const x = Number(spawn.x);
-  const y = Number(spawn.y);
-
-  if (!Number.isFinite(x) || !Number.isFinite(y)) {
-    return null;
-  }
-
-  return {
-    id: typeof spawn.id === 'string' && spawn.id.trim() ? spawn.id.trim() : `${map.id}-${index + 1}`,
-    label:
-      typeof spawn.label === 'string' && spawn.label.trim()
-        ? spawn.label.trim()
-        : `Marker ${index + 1}`,
-    notes: typeof spawn.notes === 'string' ? spawn.notes.trim() : '',
-    x: Math.max(0, Math.min(1, x)),
-    y: Math.max(0, Math.min(1, y))
-  };
-}
-
-function loadMapFile(map) {
-  const filePath = path.join(DATA_DIRECTORY, `${map.id}_caches.json`);
-
-  try {
-    const raw = fs.readFileSync(filePath, 'utf8');
-    const parsed = JSON.parse(raw);
-    const spawns = Array.isArray(parsed.spawns)
-      ? parsed.spawns.map((spawn, index) => sanitizeSpawn(map, spawn, index)).filter(Boolean)
-      : [];
-
-    return {
-      id: map.id,
-      name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim() : map.name,
-      description:
-        typeof parsed.description === 'string' && parsed.description.trim()
-          ? parsed.description.trim()
-          : map.description,
-      accentColor:
-        typeof parsed.accentColor === 'string' && parsed.accentColor.trim()
-          ? parsed.accentColor.trim()
-          : map.accentColor,
-      updatedAt:
-        typeof parsed.updatedAt === 'string' && parsed.updatedAt.trim() ? parsed.updatedAt.trim() : null,
-      source:
-        typeof parsed.source === 'string' && parsed.source.trim()
-          ? parsed.source.trim()
-          : 'Static community reference points',
-      spawns,
-      loadError: null
-    };
-  } catch (error) {
-    return {
-      id: map.id,
-      name: map.name,
-      description: map.description,
-      accentColor: map.accentColor,
-      updatedAt: null,
-      source: 'Unavailable',
-      spawns: [],
-      loadError: error.message
-    };
-  }
+  return sanitizeSettings(
+    store ? store.store : buildInitialSettings(__dirname)
+  );
 }
 
 function loadMapData() {
-  const nextMapCache = new Map();
-
-  for (const map of MAPS) {
-    nextMapCache.set(map.id, loadMapFile(map));
-  }
-
-  mapCache = nextMapCache;
+  mapCache = loadAllMapData(DATA_DIRECTORY);
 }
 
-function buildOverlayState() {
-  const settings = getSettings();
-  const activeMapId = getActiveMapId();
-  const activeMap = mapCache.get(activeMapId) || loadMapFile(MAPS_BY_ID[activeMapId]);
-
-  return {
-    settings,
-    maps: MAPS.map((map) => ({
-      ...map,
-      markerCount: mapCache.get(map.id)?.spawns.length ?? 0
-    })),
-    activeMap,
-    status: {
-      calibrationMode,
-      visible: settings.visible,
-      followGameWindow: settings.followGameWindow,
-      gameWindowTitle: settings.windowTitleHint,
-      trackedWindow,
-      trackingMessage: getTrackingMessage(settings),
-      dataDirectory: DATA_DIRECTORY
-    }
-  };
-}
-
-function getTrackingMessage(settings) {
-  const titleHint = settings.windowTitleHint || 'Arc Raiders';
-
-  if (calibrationMode) {
-    return `Calibration mode is open. Close the panel to reattach using "${titleHint}".`;
-  }
-
-  if (!settings.followGameWindow) {
-    return 'Auto-follow is disabled. Using the saved overlay bounds.';
-  }
-
-  if (trackedWindow) {
-    return `Following "${trackedWindow.title}" at ${trackedWindow.width}x${trackedWindow.height}.`;
-  }
-
-  return `Waiting for a visible window title containing "${titleHint}".`;
+function getStatePayload() {
+  return buildOverlayState({
+    settings: getSettings(),
+    mapCache,
+    calibrationMode,
+    trackedWindow,
+    dataDirectory: DATA_DIRECTORY,
+    hotkeys: HOTKEYS,
+    platform: process.platform
+  });
 }
 
 function refreshTray() {
@@ -193,15 +97,17 @@ function refreshTray() {
   }
 
   const settings = getSettings();
-  const activeMapId = getActiveMapId();
-  const activeMap = MAPS_BY_ID[activeMapId];
+  const activeMap =
+    MAPS.find((map) => map.id === getActiveMapId(settings)) || MAPS[0];
   const trackingLabel = trackedWindow
     ? `Tracking: ${trackedWindow.title}`
     : settings.followGameWindow
       ? `Tracking: waiting for ${settings.windowTitleHint}`
       : 'Tracking: manual positioning';
 
-  tray.setToolTip(`Arc Raiders Cache Overlay\n${activeMap.name}\n${trackingLabel}`);
+  tray.setToolTip(
+    `Arc Raiders Cache Overlay\n${activeMap.name}\n${trackingLabel}`
+  );
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
@@ -214,11 +120,15 @@ function refreshTray() {
       },
       { type: 'separator' },
       {
-        label: settings.visible ? `Hide Overlay (${HOTKEYS.toggleVisibility})` : `Show Overlay (${HOTKEYS.toggleVisibility})`,
+        label: settings.visible
+          ? `Hide Overlay (${HOTKEYS.toggleVisibility})`
+          : `Show Overlay (${HOTKEYS.toggleVisibility})`,
         click: () => setOverlayVisibility(!getSettings().visible)
       },
       {
-        label: calibrationMode ? 'Close Calibration Panel' : 'Open Calibration Panel',
+        label: calibrationMode
+          ? 'Close Calibration Panel'
+          : 'Open Calibration Panel',
         click: () => setCalibrationMode(!calibrationMode)
       },
       {
@@ -244,7 +154,7 @@ function refreshTray() {
         submenu: MAPS.map((map) => ({
           label: map.name,
           type: 'radio',
-          checked: map.id === activeMapId,
+          checked: map.id === activeMap.id,
           click: async () => {
             await updateSettings({ activeMapId: map.id });
           }
@@ -272,7 +182,7 @@ function broadcastState(force = false) {
     return;
   }
 
-  const state = buildOverlayState();
+  const state = getStatePayload();
   const signature = JSON.stringify({
     settings: state.settings,
     activeMapId: state.activeMap.id,
@@ -306,7 +216,9 @@ function setOverlayVisibility(nextVisible) {
     overlayWindow.hide();
   } else {
     overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1);
-    overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    overlayWindow.setVisibleOnAllWorkspaces(true, {
+      visibleOnFullScreen: true
+    });
 
     if (calibrationMode) {
       overlayWindow.show();
@@ -350,10 +262,8 @@ function applyInteractivityMode() {
 function setCalibrationMode(nextMode) {
   calibrationMode = Boolean(nextMode);
 
-  if (calibrationMode && !getSettings().visible) {
-    if (store) {
-      store.set('visible', true);
-    }
+  if (calibrationMode && !getSettings().visible && store) {
+    store.set('visible', true);
   }
 
   applyInteractivityMode();
@@ -367,7 +277,7 @@ function setCalibrationMode(nextMode) {
 }
 
 function cycleMap() {
-  const activeMapId = getActiveMapId();
+  const activeMapId = getActiveMapId(getSettings());
   const currentIndex = MAPS.findIndex((map) => map.id === activeMapId);
   const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % MAPS.length : 0;
 
@@ -377,18 +287,17 @@ function cycleMap() {
 async function reloadData() {
   loadMapData();
   broadcastState(true);
-  return buildOverlayState();
+  return getStatePayload();
 }
 
 async function updateSettings(partial) {
   if (!store) {
-    return buildOverlayState();
+    return getStatePayload();
   }
 
-  const previousSettings = getSettings();
-  const merged = sanitizeSettings({ ...previousSettings, ...partial });
+  const merged = sanitizeSettings({ ...getSettings(), ...partial });
 
-  for (const [key, value] of Object.entries(partial)) {
+  for (const key of Object.keys(partial)) {
     if (Object.prototype.hasOwnProperty.call(merged, key)) {
       store.set(key, merged[key]);
     }
@@ -401,15 +310,10 @@ async function updateSettings(partial) {
   }
 
   if (
-    Object.prototype.hasOwnProperty.call(partial, 'followGameWindow') &&
-    merged.followGameWindow
-  ) {
-    await refreshTrackedWindow(true);
-  }
-
-  if (
-    Object.prototype.hasOwnProperty.call(partial, 'windowTitleHint') &&
-    merged.followGameWindow
+    (Object.prototype.hasOwnProperty.call(partial, 'followGameWindow') &&
+      merged.followGameWindow) ||
+    (Object.prototype.hasOwnProperty.call(partial, 'windowTitleHint') &&
+      merged.followGameWindow)
   ) {
     await refreshTrackedWindow(true);
   }
@@ -422,7 +326,30 @@ async function updateSettings(partial) {
     broadcastState(true);
   }
 
-  return buildOverlayState();
+  return getStatePayload();
+}
+
+function nudgeCalibration(delta) {
+  const settings = getSettings();
+
+  return updateSettings({
+    xOffset: settings.xOffset + Number(delta?.xOffset || 0),
+    yOffset: settings.yOffset + Number(delta?.yOffset || 0)
+  });
+}
+
+function canCreateTray() {
+  if (IS_SMOKE_TEST) {
+    return false;
+  }
+
+  if (process.platform !== 'linux') {
+    return true;
+  }
+
+  return Boolean(
+    process.env.XDG_CURRENT_DESKTOP || process.env.DESKTOP_SESSION
+  );
 }
 
 function createTrayIcon() {
@@ -444,10 +371,16 @@ function createTrayIcon() {
     </svg>
   `.trim();
 
-  return nativeImage.createFromDataURL(`data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`);
+  return nativeImage.createFromDataURL(
+    `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+  );
 }
 
 function createTray() {
+  if (!canCreateTray()) {
+    return;
+  }
+
   tray = new Tray(createTrayIcon());
   tray.on('double-click', () => {
     setCalibrationMode(!calibrationMode);
@@ -456,8 +389,15 @@ function createTray() {
 }
 
 function registerShortcuts() {
+  if (IS_SMOKE_TEST) {
+    return;
+  }
+
   const shortcutHandlers = [
-    [HOTKEYS.toggleVisibility, () => setOverlayVisibility(!getSettings().visible)],
+    [
+      HOTKEYS.toggleVisibility,
+      () => setOverlayVisibility(!getSettings().visible)
+    ],
     [HOTKEYS.cycleMap, () => cycleMap()],
     [HOTKEYS.reloadData, () => reloadData()]
   ];
@@ -477,7 +417,11 @@ async function refreshTrackedWindow(force = false) {
   const settings = getSettings();
   const previousTrackedWindow = trackedWindow;
 
-  if (calibrationMode || !settings.followGameWindow) {
+  if (
+    calibrationMode ||
+    !settings.followGameWindow ||
+    process.platform !== 'win32'
+  ) {
     trackedWindow = null;
 
     if (force || previousTrackedWindow) {
@@ -522,10 +466,12 @@ async function refreshTrackedWindow(force = false) {
 }
 
 function startTrackingLoop() {
-  stopTrackingLoop();
-  void refreshTrackedWindow(true);
+  if (trackerTimer || IS_SMOKE_TEST) {
+    return;
+  }
+
   trackerTimer = setInterval(() => {
-    void refreshTrackedWindow();
+    void refreshTrackedWindow(false);
   }, TRACKING_INTERVAL_MS);
 }
 
@@ -566,7 +512,7 @@ function createOverlayWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       backgroundThrottling: false,
-      devTools: true
+      devTools: !IS_SMOKE_TEST
     }
   });
 
@@ -589,19 +535,31 @@ function createOverlayWindow() {
 
   overlayWindow.webContents.on('did-finish-load', () => {
     applyInteractivityMode();
+
     if (getSettings().visible) {
       overlayWindow.showInactive();
     }
+
     broadcastState(true);
+
+    if (IS_SMOKE_TEST) {
+      setTimeout(() => {
+        app.quit();
+      }, 1200);
+      return;
+    }
+
     void refreshTrackedWindow(true);
   });
 }
 
-ipcMain.handle('overlay:get-bootstrap', () => buildOverlayState());
-ipcMain.handle('overlay:update-settings', async (_event, partial) => updateSettings(partial));
+ipcMain.handle('overlay:get-bootstrap', () => getStatePayload());
+ipcMain.handle('overlay:update-settings', async (_event, partial) =>
+  updateSettings(partial)
+);
 ipcMain.handle('overlay:toggle-panel', async (_event, nextMode) => {
   setCalibrationMode(nextMode);
-  return buildOverlayState();
+  return getStatePayload();
 });
 ipcMain.handle('overlay:reset-calibration', async () => {
   await updateSettings({
@@ -610,13 +568,16 @@ ipcMain.handle('overlay:reset-calibration', async () => {
     scaleX: 1,
     scaleY: 1
   });
-  return buildOverlayState();
+  return getStatePayload();
 });
+ipcMain.handle('overlay:nudge-calibration', async (_event, delta) =>
+  nudgeCalibration(delta)
+);
 ipcMain.handle('overlay:cycle-map', async () => cycleMap());
 ipcMain.handle('overlay:reload-data', async () => reloadData());
 ipcMain.handle('overlay:set-visibility', async (_event, nextVisible) => {
   setOverlayVisibility(nextVisible);
-  return buildOverlayState();
+  return getStatePayload();
 });
 
 app.whenReady().then(async () => {

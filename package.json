@@ -4,9 +4,16 @@
   "description": "Safe static-data Electron overlay for Arc Raiders Hurricane and First Wave cache routes.",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron .",
-    "build": "node -e \"try { require.resolve('electron-builder'); } catch (error) { console.error('electron-builder is not installed yet. Add it during a later install window, then run npm install before packaging.'); process.exit(1); }\" && electron-builder"
+    "start": "node ./scripts/launch-electron.js .",
+    "dev": "node ./scripts/launch-electron.js .",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test",
+    "validate:data": "node ./scripts/validate-data.js",
+    "smoke": "node ./scripts/smoke.js",
+    "build": "electron-builder --dir",
+    "build:win": "electron-builder --win portable"
   },
   "keywords": [
     "arc-raiders",
@@ -50,7 +57,12 @@
     }
   },
   "devDependencies": {
-    "electron": "41.2.1"
+    "@eslint/js": "^10.0.1",
+    "electron": "41.2.1",
+    "electron-builder": "^26.8.1",
+    "eslint": "^10.2.1",
+    "globals": "^17.5.0",
+    "prettier": "^3.8.3"
   },
   "dependencies": {
     "electron-store": "11.0.2",
