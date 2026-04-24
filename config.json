@@ -1,0 +1,13 @@
+{
+  "activeMapId": "dam_battlegrounds",
+  "opacity": 0.78,
+  "markerSize": 10,
+  "showLabels": true,
+  "followGameWindow": true,
+  "windowTitleHint": "Arc Raiders",
+  "visible": true,
+  "xOffset": 0,
+  "yOffset": 0,
+  "scaleX": 1,
+  "scaleY": 1
+}

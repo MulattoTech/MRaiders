@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Arc Raiders Cache Overlay</title>
+  <style>
+    body { margin:0; overflow:hidden; background:transparent; }
+    canvas { position:absolute; top:0; left:0; }
+    #controls { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.5); padding:10px; color:white; display:none; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="controls">
+    <h3>Hurricane Cache Overlay</h3>
+    <button onclick="toggleVisibility()">Toggle</button>
+    <!-- Add more UI as needed -->
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

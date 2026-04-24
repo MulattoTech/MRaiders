@@ -1,0 +1,79 @@
+{
+  "name": "Blue Gate",
+  "description": "Starter Hurricane and First Wave cache candidates for Blue Gate.",
+  "accentColor": "#59c8ff",
+  "updatedAt": "2026-04-20",
+  "source": "Public community callouts adapted into static overlay markers.",
+  "spawns": [
+    {
+      "id": "bluegate-supply-camp",
+      "label": "Supply Camp",
+      "notes": "West camp route.",
+      "x": 0.174,
+      "y": 0.262
+    },
+    {
+      "id": "bluegate-station-plaza",
+      "label": "Station Plaza",
+      "notes": "Central plaza candidate.",
+      "x": 0.342,
+      "y": 0.218
+    },
+    {
+      "id": "bluegate-fort-knox-outer",
+      "label": "Fort Knox Outer",
+      "notes": "Outer wall approach.",
+      "x": 0.482,
+      "y": 0.284
+    },
+    {
+      "id": "bluegate-fort-knox-inner",
+      "label": "Fort Knox Inner",
+      "notes": "Inner compound sweep.",
+      "x": 0.556,
+      "y": 0.348
+    },
+    {
+      "id": "bluegate-ranger-hill",
+      "label": "Ranger Hill",
+      "notes": "Elevated west hill.",
+      "x": 0.286,
+      "y": 0.418
+    },
+    {
+      "id": "bluegate-village-roofs",
+      "label": "Village Roofs",
+      "notes": "Rooftop lane near the center.",
+      "x": 0.432,
+      "y": 0.526
+    },
+    {
+      "id": "bluegate-wreckage",
+      "label": "Wreckage",
+      "notes": "Burned vehicle cluster.",
+      "x": 0.666,
+      "y": 0.502
+    },
+    {
+      "id": "bluegate-north-culvert",
+      "label": "North Culvert",
+      "notes": "Edge path by the drainage line.",
+      "x": 0.724,
+      "y": 0.344
+    },
+    {
+      "id": "bluegate-east-scrapyard",
+      "label": "East Scrapyard",
+      "notes": "Outer scrapyard pass.",
+      "x": 0.822,
+      "y": 0.592
+    },
+    {
+      "id": "bluegate-south-fence",
+      "label": "South Fence",
+      "notes": "Fence line sweep.",
+      "x": 0.612,
+      "y": 0.738
+    }
+  ]
+}

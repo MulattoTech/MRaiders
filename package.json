@@ -1,0 +1,59 @@
+{
+  "name": "arc-raiders-hurricane-overlay",
+  "version": "1.0.0",
+  "description": "Safe static-data Electron overlay for Arc Raiders Hurricane and First Wave cache routes.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "node -e \"try { require.resolve('electron-builder'); } catch (error) { console.error('electron-builder is not installed yet. Add it during a later install window, then run npm install before packaging.'); process.exit(1); }\" && electron-builder"
+  },
+  "keywords": [
+    "arc-raiders",
+    "electron",
+    "overlay",
+    "static-data",
+    "safe-companion"
+  ],
+  "author": "OpenAI Codex",
+  "license": "MIT",
+  "build": {
+    "appId": "com.openai.arc-raiders-static-cache-overlay",
+    "productName": "Arc Raiders Hurricane Overlay",
+    "asar": true,
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "assets/**/*",
+      "data/**/*",
+      "lib/**/*",
+      "scripts/**/*",
+      "index.html",
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "styles.css",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "arc-raiders-hurricane-overlay-${version}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "41.2.1"
+  },
+  "dependencies": {
+    "electron-store": "11.0.2",
+    "electron-window-state": "5.0.3"
+  }
+}

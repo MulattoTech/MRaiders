@@ -1,0 +1,79 @@
+{
+  "name": "Dam Battlegrounds",
+  "description": "Starter Hurricane and First Wave cache candidates for Dam Battlegrounds.",
+  "accentColor": "#ff7b57",
+  "updatedAt": "2026-04-20",
+  "source": "Public community callouts adapted into static overlay markers.",
+  "spawns": [
+    {
+      "id": "dam-west-ridge",
+      "label": "West Ridge",
+      "notes": "Outer ridge candidate cache.",
+      "x": 0.148,
+      "y": 0.274
+    },
+    {
+      "id": "dam-broken-bridge",
+      "label": "Broken Bridge",
+      "notes": "Bridge approach callout.",
+      "x": 0.312,
+      "y": 0.294
+    },
+    {
+      "id": "dam-floodgate-upper",
+      "label": "Floodgate Upper",
+      "notes": "Upper concrete lane.",
+      "x": 0.406,
+      "y": 0.198
+    },
+    {
+      "id": "dam-floodgate-lower",
+      "label": "Floodgate Lower",
+      "notes": "Lower spillway route.",
+      "x": 0.452,
+      "y": 0.364
+    },
+    {
+      "id": "dam-pattern-house",
+      "label": "Pattern House",
+      "notes": "Residential overlook route.",
+      "x": 0.556,
+      "y": 0.252
+    },
+    {
+      "id": "dam-substation",
+      "label": "Substation",
+      "notes": "Transformer yard candidate.",
+      "x": 0.642,
+      "y": 0.338
+    },
+    {
+      "id": "dam-quarry-road",
+      "label": "Quarry Road",
+      "notes": "Roadside cache path.",
+      "x": 0.726,
+      "y": 0.464
+    },
+    {
+      "id": "dam-old-battleground",
+      "label": "Old Battleground",
+      "notes": "Open battlefield edge.",
+      "x": 0.584,
+      "y": 0.528
+    },
+    {
+      "id": "dam-pale-apartments",
+      "label": "Pale Apartments",
+      "notes": "Apartment cluster callout.",
+      "x": 0.332,
+      "y": 0.586
+    },
+    {
+      "id": "dam-south-cargo",
+      "label": "South Cargo",
+      "notes": "Southern cargo strip.",
+      "x": 0.674,
+      "y": 0.714
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "name": "Spaceport",
+  "description": "Starter Hurricane and First Wave cache candidates for Spaceport.",
+  "accentColor": "#96ff8f",
+  "updatedAt": "2026-04-20",
+  "source": "Public community callouts adapted into static overlay markers.",
+  "spawns": [
+    {
+      "id": "spaceport-container-west",
+      "label": "Container West",
+      "notes": "West stack candidate.",
+      "x": 0.166,
+      "y": 0.302
+    },
+    {
+      "id": "spaceport-container-east",
+      "label": "Container East",
+      "notes": "Eastern stack route.",
+      "x": 0.338,
+      "y": 0.266
+    },
+    {
+      "id": "spaceport-maintenance-wing",
+      "label": "Maintenance Wing",
+      "notes": "Service building pass.",
+      "x": 0.492,
+      "y": 0.234
+    },
+    {
+      "id": "spaceport-train-yard",
+      "label": "Train Yard",
+      "notes": "Rail-side route.",
+      "x": 0.614,
+      "y": 0.342
+    },
+    {
+      "id": "spaceport-fuel-processing",
+      "label": "Fuel Processing",
+      "notes": "Processing pad lane.",
+      "x": 0.726,
+      "y": 0.282
+    },
+    {
+      "id": "spaceport-water-towers",
+      "label": "Water Towers",
+      "notes": "Tower base callout.",
+      "x": 0.822,
+      "y": 0.436
+    },
+    {
+      "id": "spaceport-dock-approach",
+      "label": "Dock Approach",
+      "notes": "Dockside route.",
+      "x": 0.286,
+      "y": 0.536
+    },
+    {
+      "id": "spaceport-cargo-bridge",
+      "label": "Cargo Bridge",
+      "notes": "Bridge crossing candidate.",
+      "x": 0.454,
+      "y": 0.564
+    },
+    {
+      "id": "spaceport-control-road",
+      "label": "Control Road",
+      "notes": "Service road to the control area.",
+      "x": 0.626,
+      "y": 0.642
+    },
+    {
+      "id": "spaceport-east-plains",
+      "label": "East Plains",
+      "notes": "Outer route near the plains.",
+      "x": 0.812,
+      "y": 0.742
+    }
+  ]
+}

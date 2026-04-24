@@ -1,0 +1,79 @@
+{
+  "name": "Buried City",
+  "description": "Starter Hurricane and First Wave cache candidates for Buried City.",
+  "accentColor": "#f8b44c",
+  "updatedAt": "2026-04-20",
+  "source": "Public community callouts adapted into static overlay markers.",
+  "spawns": [
+    {
+      "id": "buriedcity-hospital",
+      "label": "Hospital Courtyard",
+      "notes": "Front approach cache route.",
+      "x": 0.214,
+      "y": 0.238
+    },
+    {
+      "id": "buriedcity-church-ruins",
+      "label": "Church Ruins",
+      "notes": "Ruined church line.",
+      "x": 0.364,
+      "y": 0.208
+    },
+    {
+      "id": "buriedcity-warehouse",
+      "label": "Warehouse District",
+      "notes": "North warehouse route.",
+      "x": 0.542,
+      "y": 0.254
+    },
+    {
+      "id": "buriedcity-old-town-north",
+      "label": "Old Town North",
+      "notes": "Upper street cluster.",
+      "x": 0.428,
+      "y": 0.398
+    },
+    {
+      "id": "buriedcity-old-town-south",
+      "label": "Old Town South",
+      "notes": "Lower street cluster.",
+      "x": 0.462,
+      "y": 0.522
+    },
+    {
+      "id": "buriedcity-pharma-east",
+      "label": "Pharma East",
+      "notes": "Pharma lane entry.",
+      "x": 0.654,
+      "y": 0.412
+    },
+    {
+      "id": "buriedcity-pharma-roof",
+      "label": "Pharma Roof",
+      "notes": "Upper roof access line.",
+      "x": 0.706,
+      "y": 0.288
+    },
+    {
+      "id": "buriedcity-outer-market",
+      "label": "Outer Market",
+      "notes": "Market perimeter callout.",
+      "x": 0.258,
+      "y": 0.612
+    },
+    {
+      "id": "buriedcity-canal-street",
+      "label": "Canal Street",
+      "notes": "Central canal bend.",
+      "x": 0.598,
+      "y": 0.648
+    },
+    {
+      "id": "buriedcity-south-outskirts",
+      "label": "South Outskirts",
+      "notes": "Southern exit route.",
+      "x": 0.742,
+      "y": 0.786
+    }
+  ]
+}

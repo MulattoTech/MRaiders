@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>First Wave Cache Overlay</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <canvas id="overlay-canvas" aria-hidden="true"></canvas>
+
+    <div id="status-chip" class="status-chip" aria-live="polite"></div>
+
+    <div id="calibration-shell" class="calibration-shell" aria-hidden="true">
+      <aside id="settings-panel" class="settings-panel" role="dialog" aria-modal="false">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Static Community Overlay</p>
+            <h1>Arc Raiders Cache Calibration</h1>
+          </div>
+          <button id="close-panel" class="button button--ghost" type="button">Close</button>
+        </div>
+
+        <div class="panel-grid">
+          <label class="field">
+            <span>Map Layer</span>
+            <select id="map-select"></select>
+          </label>
+
+          <label class="field">
+            <span>Opacity</span>
+            <div class="range-field">
+              <input id="opacity-range" type="range" min="0.2" max="1" step="0.01" />
+              <output id="opacity-output" for="opacity-range"></output>
+            </div>
+          </label>
+
+          <label class="field">
+            <span>Marker Size</span>
+            <div class="range-field">
+              <input id="marker-size-range" type="range" min="4" max="24" step="1" />
+              <output id="marker-size-output" for="marker-size-range"></output>
+            </div>
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Offset X</span>
+              <input id="offset-x-input" type="number" min="-1500" max="1500" step="1" />
+            </label>
+            <label class="field">
+              <span>Offset Y</span>
+              <input id="offset-y-input" type="number" min="-1500" max="1500" step="1" />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Scale X</span>
+              <input id="scale-x-input" type="number" min="0.25" max="2.5" step="0.01" />
+            </label>
+            <label class="field">
+              <span>Scale Y</span>
+              <input id="scale-y-input" type="number" min="0.25" max="2.5" step="0.01" />
+            </label>
+          </div>
+
+          <label class="checkbox-field">
+            <input id="show-labels-input" type="checkbox" />
+            <span>Show labels next to markers</span>
+          </label>
+
+          <label class="checkbox-field">
+            <input id="follow-window-input" type="checkbox" />
+            <span>Auto-follow the matching game window</span>
+          </label>
+
+          <label class="field">
+            <span>Window Title Hint</span>
+            <input
+              id="window-title-hint-input"
+              type="text"
+              maxlength="120"
+              placeholder="Arc Raiders"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </label>
+        </div>
+
+        <div class="panel-actions">
+          <button id="reset-calibration-button" class="button" type="button">Reset Offsets</button>
+          <button id="reload-data-button" class="button button--secondary" type="button">Reload Data</button>
+        </div>
+
+        <div class="panel-meta">
+          <p id="map-description" class="meta-line"></p>
+          <p id="marker-count" class="meta-line"></p>
+          <p id="tracking-status" class="meta-line"></p>
+          <p id="data-source" class="meta-line"></p>
+          <p class="meta-line">
+            Global hotkeys: <strong>F8</strong> toggle overlay, <strong>F9</strong> cycle map, <strong>F10</strong> reload data.
+          </p>
+          <p class="meta-line">
+            Manual alignment: with calibration open, drag the panel header to move the overlay window and use the window border to resize it.
+          </p>
+          <p class="meta-line">
+            Safety: static JSON only, no process hooks, no memory access, no injection.
+          </p>
+        </div>
+      </aside>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

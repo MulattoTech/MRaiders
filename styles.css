@@ -1,0 +1,260 @@
+:root {
+  --panel-bg: rgba(13, 18, 27, 0.88);
+  --panel-edge: rgba(255, 255, 255, 0.08);
+  --panel-glow: rgba(255, 123, 87, 0.16);
+  --text-main: #f8f3e9;
+  --text-muted: rgba(248, 243, 233, 0.72);
+  --accent: #ff7b57;
+  --accent-soft: rgba(255, 123, 87, 0.16);
+  --chip-bg: rgba(9, 13, 20, 0.78);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  color: var(--text-main);
+  font-family: Bahnschrift, "Trebuchet MS", Tahoma, sans-serif;
+}
+
+body {
+  position: relative;
+}
+
+canvas {
+  position: fixed;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.status-chip {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  max-width: min(720px, calc(100vw - 48px));
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(255, 123, 87, 0.16), rgba(13, 18, 27, 0.82)),
+    var(--chip-bg);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+  font-size: 13px;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  backdrop-filter: blur(16px);
+  pointer-events: none;
+}
+
+.status-chip[hidden] {
+  display: none;
+}
+
+.calibration-shell {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  justify-items: end;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 123, 87, 0.14), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(110, 196, 255, 0.08), transparent 28%);
+  pointer-events: none;
+}
+
+.calibration-shell[aria-hidden='true'] {
+  display: none;
+}
+
+.settings-panel {
+  width: min(420px, calc(100vw - 48px));
+  border: 1px solid var(--panel-edge);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 18%),
+    linear-gradient(180deg, rgba(255, 123, 87, 0.08), transparent 38%),
+    var(--panel-bg);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 48px var(--panel-glow);
+  backdrop-filter: blur(22px);
+  pointer-events: auto;
+}
+
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  -webkit-app-region: drag;
+}
+
+.panel-header button {
+  -webkit-app-region: no-drag;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.panel-header h1 {
+  margin: 0;
+  font-size: 23px;
+  line-height: 1.1;
+}
+
+.panel-grid {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px 0;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span,
+.checkbox-field span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  font: inherit;
+  outline: none;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: rgba(255, 123, 87, 0.78);
+  box-shadow: 0 0 0 3px rgba(255, 123, 87, 0.16);
+}
+
+.field input[type='range'] {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.range-field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.range-field output {
+  min-width: 54px;
+  text-align: right;
+  color: var(--text-main);
+  font-size: 13px;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkbox-field input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.panel-actions {
+  display: flex;
+  gap: 10px;
+  padding: 18px 20px 0;
+}
+
+.button {
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 123, 87, 0.4);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 123, 87, 0.22), rgba(255, 123, 87, 0.14));
+  color: var(--text-main);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button--secondary,
+.button--ghost {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.panel-meta {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px 20px;
+}
+
+.meta-line {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  .calibration-shell {
+    justify-items: stretch;
+    padding: 12px;
+  }
+
+  .settings-panel {
+    width: 100%;
+  }
+
+  .field-row,
+  .panel-actions {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .status-chip {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: none;
+  }
+}
