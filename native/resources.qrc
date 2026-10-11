@@ -1,0 +1,10 @@
+<!DOCTYPE RCC><RCC version="1.0"><qresource prefix="/data">
+  <file alias="dam_battlegrounds_caches.json">../data/dam_battlegrounds_caches.json</file>
+  <file alias="blue_gate_caches.json">../data/blue_gate_caches.json</file>
+  <file alias="buried_city_caches.json">../data/buried_city_caches.json</file>
+  <file alias="spaceport_caches.json">../data/spaceport_caches.json</file>
+  <file alias="stella_montis_caches.json">../data/stella_montis_caches.json</file>
+  <file alias="riven_tides_caches.json">../data/riven_tides_caches.json</file>
+  <file alias="pendola_pass_caches.json">../data/pendola_pass_caches.json</file>
+  <file alias="progression.json">../data/progression.json</file>
+</qresource></RCC>
