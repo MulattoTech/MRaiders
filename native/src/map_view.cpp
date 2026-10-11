@@ -29,7 +29,7 @@ void MapView::setMap(const MapData& map) {
     map_ = map;
     backgroundPath_.clear();
     redraw();
-    resetZoom();
+    QTimer::singleShot(0, this, [this] { resetZoom(); });
 }
 void MapView::setFilter(const QString& search, const QString& category, bool labelsVisible) {
     search_ = search.trimmed();
