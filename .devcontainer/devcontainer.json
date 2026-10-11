@@ -1,5 +1,5 @@
 {
-  "name": "Arc Raiders Hurricane Overlay",
+  "name": "MRaiders — C++20 Qt Companion (cloud workspace)",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
   "postCreateCommand": "bash scripts/bootstrap-codespace.sh",
   "customizations": {
@@ -9,10 +9,9 @@
         "editor.formatOnSave": true
       },
       "extensions": [
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "editorconfig.editorconfig",
-        "ms-playwright.playwright"
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "editorconfig.editorconfig"
       ]
     }
   }
