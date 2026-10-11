@@ -1,0 +1,23 @@
+name: Bug report
+description: Report a reproducible MRaiders defect
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Describe the map, interaction, and observed result.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Windows 11, Qt native CI artifact, commit SHA

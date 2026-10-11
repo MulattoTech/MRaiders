@@ -1,0 +1,85 @@
+name: Native CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  data:
+    name: Validate data
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate bundled JSON
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import glob, json, math, pathlib, sys
+          maps = glob.glob("data/*_caches.json")
+          assert len(maps) >= 7, "Expected all 7 named maps"
+          for filename in maps:
+              doc = json.loads(pathlib.Path(filename).read_text(encoding="utf-8"))
+              assert isinstance(doc.get("name"), str)
+              assert isinstance(doc.get("spawns"), list)
+              ids = set()
+              for m in doc["spawns"]:
+                  assert str(m["id"]) not in ids, f"Duplicate ID in {filename}"
+                  ids.add(str(m["id"]))
+                  assert all(isinstance(m[c], (int, float)) and not isinstance(m[c], bool) and math.isfinite(m[c]) and 0 <= m[c] <= 1 for c in ("x", "y"))
+          catalog = json.loads(pathlib.Path("data/progression.json").read_text(encoding="utf-8"))
+          assert len({x["id"] for x in catalog["items"]}) == len(catalog["items"])
+          print(f"Validated {len(maps)} maps and {len(catalog['items'])} progression entries")
+          PY
+
+  linux:
+    name: Qt/Linux build and CTest
+    needs: data
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system Qt 6 developer packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel 2
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  windows:
+    name: Qt 6.12/Windows package
+    needs: data
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.12.0'
+          arch: win64_msvc2022_64
+          cache: true
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel 2
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Deploy runtime DLLs
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force package | Out-Null
+          Copy-Item build/native/MRaiders.exe package/MRaiders.exe
+          windeployqt --release --no-translations package/MRaiders.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MRaiders-Windows-Qt-6.12
+          path: package/
+          if-no-files-found: error
+          retention-days: 14

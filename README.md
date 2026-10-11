@@ -1,117 +1,63 @@
-# Arc Raiders Hurricane / First Wave Cache Companion
+# MRaiders
 
-This project is a lightweight Electron companion for **Arc Raiders** that shows only **static, community-style cache candidate markers**. It supports both a game overlay view and a second-monitor companion view. It does **not** read memory, hook the game, inject code, scrape packets, or do any real-time detection.
+**MRaiders** is an independent ARC Raiders companion application developed by MulattoTech.
+The project is being modernized from its original Hurricane Cache Electron overlay
+into a **native, offline-first C++20 / Qt desktop app** with a broader feature set.
 
-## Safety Model
+> **Work in progress.** Native development is on the refactor PR; existing Electron
+> sources remain preserved. MRaiders is not affiliated with or endorsed by Embark Studios.
 
-- Transparent external overlay only
-- Separate second-monitor companion window using the same safe static data
-- Title-based window alignment only
-- Static JSON data loaded from `/data`
-- No process memory access
-- No DLL injection or graphics hooks
-- Intended for borderless and windowed fullscreen use
+## Current native functionality
 
-## Features
+- Seven registered map areas: Dam Battlegrounds, Blue Gate, Buried City,
+  Spaceport, Stella Montis, Riven Tides, and **Pendola Pass** (Frozen Trail 2.0).
+- Pan/zoom map canvas with searchable, filterable candidate markers.
+- User-imported local reference map images (no copyrighted images distributed).
+- Select markers, maintain map-specific manual routes, and export route JSON.
+- Persistent manual progression checklist for Frozen Trail milestones.
+- Offline application; **no game interaction, screen capture, memory reading,
+  network interception, input automation, or injected overlay**.
+- CMake build, QtTest data checks, and GitHub Actions Windows build artifact workflow.
 
-- Transparent, click-through, always-on-top overlay window
-- Optional second-monitor window that can run independently from the overlay
-- Auto-follow for a visible matching Arc Raiders game window on Windows
-- Configurable window-title hint if the game caption differs on your setup
-- Searchable marker directory with notes and coordinate references inside the calibration panel
-- Keyboard calibration nudging with arrow keys and `Shift` for larger steps
-- Independent view toggles so the game overlay, second-monitor view, both, or neither can be active
-- Global hotkeys:
-  - `F8` toggle game overlay visibility
-  - `F9` cycle the active map layer
-  - `F10` reload JSON data from disk
-- Tray menu for calibration, data reload, map switching, and quitting
-- In-overlay calibration panel for:
-  - opacity
-  - marker size
-  - X/Y offsets
-  - X/Y scale
-  - label visibility
-  - map selection
-  - editable window-title hint
-  - quick close with `Esc`
-- Settings persistence via `electron-store`
+### Data accuracy
+The four original cache JSON datasets are **unverified starter candidate data**,
+not confirmed spawn locations. The three newer map files deliberately contain
+empty spawn arrays until independently verified, licensed community contributions
+are received. Marker coordinates use normalized 0..1 image-space values.
+Images require matching map boundaries or additional calibration work.
 
-## Project Structure
+## Build native (Qt 6.12 recommended)
 
-- `main.js` Electron main process, tray, hotkeys, persistence, title-based tracking, and second-monitor window management
-- `preload.js` safe IPC bridge for the renderer
-- `renderer.js` lightweight marker drawing and calibration UI logic
-- `styles.css` transparent overlay and panel styling
-- `assets/app-icon.svg` tray and future packaging icon source
-- `lib/defaults.js` shared map metadata and settings schema
-- `lib/map-data.js` static JSON normalization and loading
-- `lib/overlay-state.js` renderer/main shared state assembly
-- `lib/window-probe.js` PowerShell wrapper for safe external window bounds lookup
-- `scripts/find-arc-raiders-window.ps1` Windows top-level window probe
-- `scripts/launch-electron.js` Codespaces-safe Electron launcher
-- `scripts/smoke.js` headless Electron smoke check for Codespaces
-- `scripts/validate-data.js` static marker data validation
-- `tests/*.test.js` Node test suite for settings, data loading, and runtime helpers
-- `data/*.json` static community-style marker files
+Install a Qt 6 Widgets developer kit (minimum supported CMake API version 6.4),
+CMake 3.22+, C++20 compiler, and Ninja:
 
-## Data Notes
-
-The bundled JSON files are **starter datasets** intended to be safe, editable, and immediately usable. They are based on public community location callouts and should be treated as **possible cache candidates**, not guaranteed live spawns.
-
-## Run
-
-```powershell
-npm install
-npm start
+```sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
 ```
 
-Then use the tray icon to open the calibration panel and line the markers up over the Arc Raiders in-game map.
+Windows releases are built in **GitHub Actions** rather than requiring a Qt
+installation on your PC. Download the `MRaiders-Windows-Qt-6.12` artifact from
+a successful Native CI run and open `MRaiders.exe` inside its extracted folder.
+It is not a signed installer or certified public release.
 
-The control panel lets you independently toggle:
+For the previous Electron version, `npm ci && npm test` remains available
+from the repository root. Do not assume the old Electron overlay is permitted
+by the game just because it does not access process memory.
 
-- the transparent game overlay
-- the second-monitor companion view
+## Work and collaboration
 
-That means you can run overlay only, second-monitor only, both, or neither while keeping the same shared marker data and calibration settings.
+- [Roadmap](docs/ROADMAP.md)
+- [Agent contract](AGENTS.md)
+- [Architecture](ARCHITECTURE.md)
+- [Contribution guide](CONTRIBUTING.md)
+- [Codex continuation prompt](prompts/codex/START.md)
+- [Official Frozen Trail 2.0 notes](https://id.embark.games/arc-raiders/support/faq/282-2-0-frozen-trail-update)
 
-## Checks
+External content, commercial maps, and third-party product databases are not
+bundled. Qt licensing obligations apply to redistributed Qt runtime libraries.
+A project source-code license has not yet been selected; verify licensing before
+accepting external code contributions or publishing a redistributed release.
 
-```powershell
-npm run lint
-npm test
-npm run validate:data
-npm run smoke
-npm run build
-```
-
-- `npm run smoke` launches Electron headlessly in Codespaces with container-only compatibility flags
-- `npm run build` produces a host-platform unpacked build for verification in the current environment
-- `npm run build:win` creates the Windows portable build when run on a Windows-capable packaging machine
-
-## Codespaces
-
-This repo includes a basic `.devcontainer` so it can be opened in GitHub Codespaces for cloud-first development.
-
-- Use Codespaces for editing, dependency installs, documentation, and general project work
-- `npm start` launches Electron through a Codespaces-aware wrapper that clears `ELECTRON_RUN_AS_NODE`
-- `scripts/bootstrap-codespace.sh` is the repeatable Codespaces bootstrap entry point and is wired into `postCreateCommand`
-- The bootstrap step installs the Linux libraries Electron needs for `npm start` and `npm run smoke`
-- Use a local Windows machine for final Electron overlay validation
-- Transparent click-through behavior, global hotkeys, Arc Raiders window alignment, and second-monitor placement should be tested locally
-
-## Packaging
-
-Packaging metadata is staged in `package.json` and `electron-builder` is installed.
-
-Use the host-platform directory build for container verification:
-
-```powershell
-npm run build
-```
-
-Use the Windows portable target for actual overlay distribution:
-
-```powershell
-npm run build:win
-```
+*ARC Raiders and related names are trademarks of their respective owners.*
