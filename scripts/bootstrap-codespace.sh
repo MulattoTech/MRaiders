@@ -1,23 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if ! command -v xvfb-run >/dev/null 2>&1 || ! dpkg -s libnspr4 >/dev/null 2>&1; then
-  sudo apt-get update
-  sudo apt-get install -y \
-    xvfb \
-    libnspr4 \
-    libnss3 \
-    libgtk-3-0 \
-    libasound2 \
-    libxss1 \
-    libgbm1 \
-    libatk-bridge2.0-0 \
-    libdrm2
-fi
+# Qt 6.4 API baseline in Debian bookworm; distribution packages are intentionally
+# separate from the Qt 6.12 Windows runtime used by release packaging.
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends \
+  cmake ninja-build build-essential \
+  qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev xvfb
 
-npm install
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+printf '\nMRaiders cloud workspace prepared. Run: cmake --build build && ctest --test-dir build --output-on-failure\n'
 
-if [ -f node_modules/electron/dist/chrome-sandbox ]; then
-  sudo chown root:root node_modules/electron/dist/chrome-sandbox
-  sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+# Legacy Electron is opt-in; do not download its packages in a native workspace.
+if [[ "${MRAIDERS_BOOTSTRAP_LEGACY:-0}" == "1" ]]; then
+  npm ci
 fi
