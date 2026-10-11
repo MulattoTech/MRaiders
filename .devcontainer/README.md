@@ -1,9 +1,18 @@
-This project can be opened in GitHub Codespaces for cloud-first editing and dependency management.
+# MRaiders cloud workspace
 
-Notes:
+New Codespaces use the native Qt development flow by default (Debian bookworm
+Qt 6.4 developer packages for compatibility; Windows CI targets Qt 6.12 LTS).
 
-- `npm install` runs automatically when the codespace is created.
-- `scripts/bootstrap-codespace.sh` is the repeatable setup script used by `postCreateCommand`.
-- The post-create step also installs the Linux libraries Electron needs for `npm start` and `npm run smoke`.
-- Electron UI overlay behavior still needs Windows-local validation.
-- Use Codespaces for code changes, reviews, smoke checks, and packaging verification; use your local machine when you need to verify transparent overlay positioning, global hotkeys, and game-window tracking.
+After Codespaces creation:
+```bash
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
+QT_QPA_PLATFORM=offscreen timeout 5s ./build/native/MRaiders || true
+```
+
+The GUI timeout line is a launch diagnostic **only**, not a full application
+acceptance test. Never represent it as proof that the Windows GUI passed.
+
+This bootstraps inside the cloud container, not the user's local PC. For
+the previous Electron dependencies, set `MRAIDERS_BOOTSTRAP_LEGACY=1` before
+running bootstrap manually. Avoid rebuilding an active Codespace unnecessarily.
