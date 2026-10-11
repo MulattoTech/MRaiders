@@ -96,8 +96,10 @@ void MapView::redraw() {
 void MapView::focusMarker(const QString& id) {
     auto* circle = circles_.value(id, nullptr);
     if (!circle || !circle->isVisible()) return;
-    scene_.clearSelection();
-    circle->setSelected(true);
+    if (!circle->isSelected()) {
+        scene_.clearSelection();
+        circle->setSelected(true);
+    }
     centerOn(circle);
 }
 void MapView::resetZoom() {
