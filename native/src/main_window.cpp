@@ -1,5 +1,7 @@
 #include "main_window.h"
 #include "map_view.h"
+#include <QAction>
+#include <QMenu>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFile>
