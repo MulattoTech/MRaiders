@@ -3,7 +3,7 @@ add_library(mraiders_core STATIC
     src/tracker_repository.cpp
 )
 target_include_directories(mraiders_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(mraiders_core PUBLIC Qt6::Core)
+target_link_libraries(mraiders_core PUBLIC Qt6::Core Qt6::Gui)
 
 add_executable(MRaiders WIN32
     src/main.cpp
