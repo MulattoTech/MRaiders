@@ -5,6 +5,8 @@
 #include <QWheelEvent>
 #include <QPixmap>
 #include <QBrush>
+#include <QPainter>
+#include <QTimer>
 
 namespace { constexpr int canvasWidth = 1200; constexpr int canvasHeight = 800; }
 
