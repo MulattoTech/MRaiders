@@ -47,6 +47,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
       QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }
     )");
     auto* tabs = new QTabWidget(this);
+    tabs->setObjectName("mainTabs");
     tabs->addTab(createMapPage(), "Interactive Maps");
     tabs->addTab(createTrackerPage(), "My Progress");
     tabs->addTab(createUpdatePage(), "Frozen Trail 2.0");
@@ -85,10 +86,12 @@ QWidget* MainWindow::createMapPage() {
     sideLayout->addWidget(brand);
     sideLayout->addWidget(new QLabel("Map", side));
     mapChoice_ = new QComboBox(side);
+    mapChoice_->setObjectName("mapChoice");
     for (const MapData& map : maps_) mapChoice_->addItem(map.name, map.id);
     sideLayout->addWidget(mapChoice_);
     sideLayout->addWidget(new QLabel("Search known candidate markers", side));
     search_ = new QLineEdit(side);
+    search_->setObjectName("mapSearch");
     search_->setPlaceholderText("Name or notes...");
     sideLayout->addWidget(search_);
     categoryChoice_ = new QComboBox(side);
@@ -107,6 +110,7 @@ QWidget* MainWindow::createMapPage() {
     sideLayout->addWidget(mapStatus_);
     sideLayout->addWidget(new QLabel("Candidate locations", side));
     markerList_ = new QListWidget(side);
+    markerList_->setObjectName("markerList");
     sideLayout->addWidget(markerList_, 1);
     splitter->addWidget(side);
 
@@ -123,6 +127,7 @@ QWidget* MainWindow::createMapPage() {
     auto* addButton = new QPushButton("Add Selected Marker", routeSide);
     routeLayout->addWidget(addButton);
     routeList_ = new QListWidget(routeSide);
+    routeList_->setObjectName("routeList");
     routeLayout->addWidget(routeList_, 1);
     auto* clearButton = new QPushButton("Clear Route", routeSide);
     routeLayout->addWidget(clearButton);
@@ -287,6 +292,7 @@ QWidget* MainWindow::createTrackerPage() {
     introduction->setWordWrap(true);
     layout->addWidget(introduction);
     auto* tree = new QTreeWidget(page);
+    tree->setObjectName("progressionTree");
     tree->setColumnCount(3);
     tree->setHeaderLabels({"Milestone", "Done", "Context"});
     tree->setRootIsDecorated(false);

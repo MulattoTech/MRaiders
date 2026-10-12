@@ -19,4 +19,13 @@ if(BUILD_TESTING)
     target_link_libraries(mraiders_data_tests PRIVATE mraiders_core Qt6::Test)
     add_test(NAME data_validation COMMAND mraiders_data_tests)
     set_tests_properties(data_validation PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(mraiders_ui_tests
+        tests/test_ui.cpp
+        src/main_window.cpp
+        src/map_view.cpp
+        resources.qrc
+    )
+    target_link_libraries(mraiders_ui_tests PRIVATE mraiders_core Qt6::Widgets Qt6::Test)
+    add_test(NAME ui_integration COMMAND mraiders_ui_tests)
+    set_tests_properties(ui_integration PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
