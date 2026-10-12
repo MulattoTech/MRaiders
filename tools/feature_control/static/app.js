@@ -57,6 +57,35 @@ function renderBoard(){
     card.append(meta);$("board").append(card);
   }
 }
+
+async function loadAuditHealth(){
+  $("auditSummary").textContent="Checking GitHub at the exact main revision…";
+  $("auditChecks").replaceChildren();
+  try {
+    const state=await api("/api/audit-health");
+    const sha=state.sha || "";
+    $("auditSummary").textContent="main @ "+sha.slice(0,12)+" · "+(state.checks||[]).length+" reported checks";
+    const expected=["MRaiders Quality Gate","Validate AI provenance","Feature Control tests","Qt/Linux build and CTest","Qt 6.12/Windows package","analyze-cpp"];
+    const runs=new Map((state.checks||[]).map(c=>[c.name,c]));
+    for(const name of expected){
+      const item=runs.get(name);
+      const card=document.createElement("article");card.className="card";
+      const nameEl=document.createElement("strong");nameEl.textContent=name;card.append(nameEl);
+      const status=document.createElement("div");status.className="meta";
+      const value=item?((item.conclusion==="NOT_RUN")?item.status:item.conclusion):"MISSING";
+      status.textContent=" · "+value;
+      card.append(status);
+      if(item && item.url && item.url.startsWith("https://github.com/")){
+        const link=document.createElement("a");link.href=item.url;link.target="_blank";
+        link.rel="noopener";link.textContent=" View run ↗";card.append(link);
+      }
+      $("auditChecks").append(card);
+    }
+  } catch(error) {
+    $("auditSummary").textContent="Unable to load audit checks: "+error.message;
+  }
+}
+
 async function submit(ev){
   ev.preventDefault();$("submit").disabled=true;$("message").textContent="Creating GitHub issue and linking Project fields…";
   try{
@@ -84,5 +113,6 @@ $("workstream").addEventListener("change",()=>{$("probe").textContent=probes[$("
 $("priorityFilter").addEventListener("change",renderBoard);
 $("statusFilter").addEventListener("change",renderBoard);
 $("refresh").addEventListener("click",loadBoard);
-async function boot(){try{const info=await api("/api/health");$("health").textContent="Connected · @"+info.signed_in_as;}catch(e){$("health").textContent="GitHub CLI login required: "+e.message;}heuristic();$("probe").textContent=probes[$("workstream").value];setStep(0);loadBoard();}
+$("refreshAudit").addEventListener("click",loadAuditHealth);
+async function boot(){try{const info=await api("/api/health");$("health").textContent="Connected · @"+info.signed_in_as;}catch(e){$("health").textContent="GitHub CLI login required: "+e.message;}heuristic();$("probe").textContent=probes[$("workstream").value];setStep(0);loadBoard();loadAuditHealth();}
 boot();
