@@ -57,6 +57,24 @@ class FeatureTests(unittest.TestCase):
         self.assertEqual(result["feature_id"],"MR-16")
         self.assertTrue(any("item-add" in x for x in calls))
         self.assertTrue(any("Priority" in x for x in calls))
+class AuditHealthTests(unittest.TestCase):
+    @patch("tools.feature_control.github.gh")
+    def test_exact_sha_and_missing_checks_not_fabricated(self, fake):
+        from tools.feature_control.github import audit_health
+        sha="a"*40
+        def lookup(*args, **kwargs):
+            if "/branches/main" in args[-1]: return {"commit":{"sha":sha}}
+            if "/check-runs" in args[-1]:
+                return {"check_runs":[{"name":"Validate AI provenance","status":"completed",
+                          "conclusion":"success","html_url":"https://github.com/MulattoTech/MRaiders/runs/123"}]}
+            raise AssertionError(args)
+        fake.side_effect=lookup
+        result=audit_health()
+        self.assertEqual(result["sha"],sha)
+        self.assertEqual(len(result["checks"]),1)
+        self.assertEqual(result["checks"][0]["name"],"Validate AI provenance")
+        self.assertTrue(result["audit_declared_only"])
+
 class AuditTests(unittest.TestCase):
     def test_good_ai_commit(self):
         good,problems,t=validate_message(AI_MSG)
