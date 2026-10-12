@@ -1,8 +1,7 @@
 {
   "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
-  },
   "files.eol": "\n",
-  "javascript.validate.enable": false
+  "cmake.generator": "Ninja",
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "C_Cpp.default.cppStandard": "c++20"
 }

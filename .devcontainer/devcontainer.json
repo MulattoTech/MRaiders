@@ -1,12 +1,14 @@
 {
-  "name": "MRaiders — C++20 Qt Companion (cloud workspace)",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "name": "MRaiders — Native C++20/Qt cloud workspace",
+  "image": "mcr.microsoft.com/devcontainers/cpp:1-bookworm",
   "postCreateCommand": "bash scripts/bootstrap-codespace.sh",
   "customizations": {
     "vscode": {
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "cmake.generator": "Ninja",
+        "cmake.buildDirectory": "${workspaceFolder}/build"
       },
       "extensions": [
         "ms-vscode.cpptools",
