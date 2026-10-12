@@ -84,6 +84,17 @@
       <div id="board" class="board" aria-live="polite">Loading…</div>
       <p class="hint">Acceptance is separate from implementation status. Completed implementation does not automatically mean PASS.</p>
     </section>
+    <section class="panel" aria-label="Dependency-aware development planning">
+      <div class="section-head"><div>
+        <h2>Execution readiness</h2>
+        <p>Live GitHub Project dependencies, conflicts, cycles, and acceptance gates.</p>
+      </div><button type="button" id="refreshExecution">↻ Refresh readiness</button></div>
+      <p class="hint">Complexity-first recommendations are advisory. This view never launches agents,
+      acquires a distributed work lock, or marks work accepted.</p>
+      <p id="executionStatus" role="status" aria-live="polite">Loading Project dependencies…</p>
+      <div id="executionSummary" class="metrics"></div>
+      <div id="executionBoard" class="board" aria-live="polite"></div>
+    </section>
   </main>
   <footer>Runs locally on 127.0.0.1 · Uses existing GitHub CLI authentication · No personal token stored · Not connected to ARC Raiders</footer>
 </body>

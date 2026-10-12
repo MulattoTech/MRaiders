@@ -86,6 +86,71 @@ async function loadAuditHealth(){
   }
 }
 
+async function loadExecutionPlan(){
+  $("executionStatus").textContent="Reading dependencies and acceptance evidence from Project #2…";
+  $("executionSummary").replaceChildren();
+  $("executionBoard").replaceChildren();
+  try {
+    const plan=await api("/api/orchestration");
+    const summary=plan.summary || {};
+    $("executionStatus").textContent="Project snapshot · "+(plan.features||[]).length+
+      " tracked implementation issues · updated "+(plan.generated_at_utc || "unknown UTC");
+    for(const state of ["READY","BLOCKED","CYCLE","IN_PROGRESS","REVIEW","ACCEPTED"]){
+      const badge=document.createElement("span");
+      badge.textContent=state.replace("_"," ")+": "+(summary[state]||0);
+      $("executionSummary").append(badge);
+    }
+    const order=["READY","CYCLE","BLOCKED","IN_PROGRESS","REVIEW","ACCEPTED"];
+    const features=[...(plan.features||[])].sort((a,b)=>
+      order.indexOf(a.readiness)-order.indexOf(b.readiness));
+    if(!features.length) $("executionBoard").textContent="No tracked implementation issues found.";
+    for(const feature of features){
+      const card=document.createElement("article");
+      card.className="card";
+      const heading=document.createElement("strong");
+      const link=document.createElement("a");
+      if(/^https:\/\/github\.com\/MulattoTech\/MRaiders\/issues\/\d+$/.test(feature.url)){
+        link.href=feature.url;link.target="_blank";link.rel="noopener";
+        link.textContent=feature.id+" · "+feature.title;heading.append(link);
+      }else heading.textContent=feature.id+" · "+feature.title;
+      card.append(heading);
+      const status=document.createElement("div");
+      status.className="meta";
+      const fields=[
+        ["Readiness",feature.readiness],
+        ["Priority",feature.priority],
+        ["Project",feature.status],
+        ["Acceptance",feature.acceptance],
+        ["Effort",feature.effort]
+      ];
+      for(const [label,value] of fields){
+        const pill=document.createElement("span");pill.className="tag";
+        pill.textContent=label+": "+(value||"Unknown");
+        status.append(pill);
+      }
+      card.append(status);
+      const info=document.createElement("p");
+      const refs=(feature.dependencies||[]).map(number=>"MR-"+number);
+      info.textContent="Depends on: "+(refs.join(", ")||"none recorded")+
+        " · Unblocks: "+((feature.unlocks||[]).join(", ")||"none");
+      card.append(info);
+      if((feature.blocked_by||[]).length){
+        const blockers=document.createElement("p");
+        blockers.textContent="Blocked / needs review: "+feature.blocked_by.join("; ");
+        card.append(blockers);
+      }
+      if(feature.spec_version===0){
+        const legacy=document.createElement("small");
+        legacy.textContent="Legacy issue specification (no versioned intake marker)";
+        card.append(legacy);
+      }
+      $("executionBoard").append(card);
+    }
+  }catch(error){
+    $("executionStatus").textContent="Execution readiness unavailable: "+error.message;
+  }
+}
+
 async function submit(ev){
   ev.preventDefault();$("submit").disabled=true;$("message").textContent="Creating GitHub issue and linking Project fields…";
   try{
@@ -113,6 +178,7 @@ $("workstream").addEventListener("change",()=>{$("probe").textContent=probes[$("
 $("priorityFilter").addEventListener("change",renderBoard);
 $("statusFilter").addEventListener("change",renderBoard);
 $("refresh").addEventListener("click",loadBoard);
+$("refreshExecution").addEventListener("click",loadExecutionPlan);
 $("refreshAudit").addEventListener("click",loadAuditHealth);
-async function boot(){try{const info=await api("/api/health");$("health").textContent="Connected · @"+info.signed_in_as;}catch(e){$("health").textContent="GitHub CLI login required: "+e.message;}heuristic();$("probe").textContent=probes[$("workstream").value];setStep(0);loadBoard();loadAuditHealth();}
+async function boot(){try{const info=await api("/api/health");$("health").textContent="Connected · @"+info.signed_in_as;}catch(e){$("health").textContent="GitHub CLI login required: "+e.message;}heuristic();$("probe").textContent=probes[$("workstream").value];setStep(0);loadBoard();loadAuditHealth();loadExecutionPlan();}
 boot();

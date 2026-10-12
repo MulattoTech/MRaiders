@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 from .core import Feature
+from .orchestration import analyze_project
 
 REPO="MulattoTech/MRaiders"
 OWNER="MulattoTech"
@@ -36,6 +37,13 @@ def board():
              "category":i.get("category") or "Unassigned",
              "acceptance":i.get("acceptance") or "NOT_RUN"}
             for i in listing.get("items",[])]
+
+def execution_plan():
+    """Read-only Project-first dependency execution preview."""
+    listing = gh("project", "item-list", PROJECT, "--owner", OWNER,
+                 "--limit", "200", "--format", "json")
+    return analyze_project(listing.get("items", []))
+
 
 def ensure_label(name):
     try: gh("api",f"repos/{REPO}/labels/{name}"); return

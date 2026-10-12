@@ -68,6 +68,9 @@ class FeatureHandler(BaseHTTPRequestHandler):
         if url=="/api/audit-health":
             try: return self.send_json(200,github.audit_health())
             except Exception as e: return self.send_json(503,{"error":str(e)})
+        if url=="/api/orchestration":
+            try: return self.send_json(200,github.execution_plan())
+            except Exception as e: return self.send_json(503,{"error":str(e)})
         if url=="/api/board":
             try: return self.send_json(200,{"items":github.board()})
             except Exception as e: return self.send_json(503,{"error":str(e)})
