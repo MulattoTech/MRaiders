@@ -53,3 +53,18 @@ accurate game coordinates, reference-image licensing or player-facing acceptance
 - Explicit import/export of independently validated calibration packages
 - Perspective/nonlinear distortion if supported by actual sample data
 - Windows graphical usability test and image-alignment regression evidence
+
+## Independent source anchors and portable alignment
+
+Use **Pick Independent Map Coordinate...** to enter known X/Y fractions
+without selecting an existing approximate cache marker. Click the matching
+position on the imported image. This avoids relying on unverified bundled
+spawn candidates when you have authoritative reference coordinates.
+
+Use **Export Alignment JSON...** to save a portable v1 package containing the
+mapId, two/three anchor pairs, and an explicit user-supplied/unverified flag.
+No image bytes, game account data, or computer-specific paths are exported.
+Use **Import Alignment JSON...** after loading your local reference image;
+the importer requires a matching mapId, valid normalized numeric points,
+a supported schema, and a bounded input size (64 KiB). Invalid imports never
+replace existing valid alignment.

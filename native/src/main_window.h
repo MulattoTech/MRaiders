@@ -30,6 +30,9 @@ private:
     void importMapImage();
     void exportRoute();
     void startCalibrationPick();
+    void startManualCalibrationPick();
+    void importCalibration();
+    void exportCalibration();
     void finishCalibrationPick(const QPointF& imagePoint);
     void clearCalibration();
     void restoreCalibration(const QString& mapId);

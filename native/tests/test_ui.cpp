@@ -51,6 +51,9 @@ private slots:
         MainWindow window;
         QVERIFY(window.findChild<QPushButton*>("pickAnchorButton") != nullptr);
         QVERIFY(window.findChild<QPushButton*>("resetAlignmentButton") != nullptr);
+        QVERIFY(window.findChild<QPushButton*>("manualAnchorButton") != nullptr);
+        QVERIFY(window.findChild<QPushButton*>("importAlignmentButton") != nullptr);
+        QVERIFY(window.findChild<QPushButton*>("exportAlignmentButton") != nullptr);
     }
     void progressionChecklistIsInteractive() {
         MainWindow window;
