@@ -9,3 +9,20 @@
 7. **Reconcile:** link PR, commits and release, resolve dependencies, update board status and choose the next unowned P0/P1.
 
 GitHub Project #2 is the primary management dashboard. Issues are implementation contracts; PR and Git history prove what was changed. Feature Control v1 does not auto-launch agents or autonomously promote acceptance. Issue #15 contains the advanced orchestration design.
+
+## Protected-branch migration gate
+
+The pre-native main branch lacks the Qt native source, so it cannot run Qt-specific
+checks on developer-tool-only PRs. The Universal Quality workflow detects
+existing Electron/Qt components and tests what is actually present rather than
+inventing a green Qt check. Governance PR #17 must first pass the Universal
+Quality, AI provenance, and Feature Control workflows. After those checks pass,
+run `pwsh -NoProfile -File scripts/Configure-MRaiders-Gates.ps1 -Apply` to
+require those exact green contexts while preserving PR/no-delete/no-force-push
+rules. Do not bypass checks or override main rules directly.
+
+After the native branch is merged and its checks execute on main, run the same
+script with `-Stage Native -Apply` to additionally require Linux CTest, Windows
+Qt packaging, JSON validation and CodeQL. See the Native CI workflow for
+the actual compiled Windows artifact; the Universal Quality gate is not a
+substitute for a native Windows release acceptance test.

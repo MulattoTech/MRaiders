@@ -18,3 +18,7 @@ The submission never launches an AI agent. Planned model selection is not eviden
 Security: the HTTP server listens on 127.0.0.1 only, requires same-origin/host and CSRF protection, rejects oversized non-JSON requests, renders GitHub data as text (not HTML), and uses the already signed-in local gh CLI. It stores no personal token. Run only on a trusted developer computer.
 
 This is **working intake + prioritization + live project board**, not yet the larger multi-repository LLM-driven orchestration system. Dynamic probing, repository analysis, agent launch, dependent worktree scheduling, and auto acceptance are planned in issue #15.
+
+**Pre-merge launch path:** while PR #17 remains unmerged, run the launcher from
+`C:\tools\dev\MRaiders-AuditControl\scripts\Start-MRaiders-FeatureControl.ps1`.
+After safe integration into main, switch to the regular MRaiders repository path.

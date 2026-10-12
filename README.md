@@ -145,3 +145,6 @@ Use the Windows portable target for actual overlay distribution:
 ```powershell
 npm run build:win
 ```
+
+**Current development preview:** Feature Control is on PR #17 and can be run
+from `C:\tools\dev\MRaiders-AuditControl` before it is merged to main.

@@ -35,3 +35,7 @@ python -m tools.audit.provenance report --base origin/main --head HEAD --json au
 CI is defined in `.github/workflows/ai-provenance.yml`. Bot commits without self-attested models are reported by their Git bot identity, not attributed to a fictitious AI. Merge commits retain Git history. GitHub artifacts expire by retention policy; GitHub commit hashes/PR notes are long-term references but not an external attestation service.
 
 An audit PASS does not mean user acceptance PASS. Real tests, safety checks and source licenses remain required.
+
+The protected `main` branch will require successful `Validate AI provenance`
+after the governance PR's branch rules are migrated. Previously created commits
+stay in Git history and are clearly identified as pre-policy when applicable.
