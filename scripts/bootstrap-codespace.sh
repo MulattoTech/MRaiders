@@ -6,7 +6,7 @@ set -euo pipefail
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
   cmake ninja-build build-essential \
-  qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev xvfb
+  qt6-base-dev qt6-base-dev-tools libqt6sql6-sqlite libgl1-mesa-dev xvfb
 
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
 cmake --build build --parallel 2

@@ -1,14 +1,16 @@
 add_library(mraiders_core STATIC
     src/map_repository.cpp
     src/tracker_repository.cpp
+    src/catalog_store.cpp
 )
 target_include_directories(mraiders_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(mraiders_core PUBLIC Qt6::Core Qt6::Gui)
+target_link_libraries(mraiders_core PUBLIC Qt6::Core Qt6::Gui Qt6::Sql)
 
 add_executable(MRaiders WIN32
     src/main.cpp
     src/main_window.cpp
     src/map_view.cpp
+    src/catalog_page.cpp
     resources.qrc
 )
 target_link_libraries(MRaiders PRIVATE mraiders_core Qt6::Widgets)
@@ -23,9 +25,13 @@ if(BUILD_TESTING)
         tests/test_ui.cpp
         src/main_window.cpp
         src/map_view.cpp
+        src/catalog_page.cpp
         resources.qrc
     )
     target_link_libraries(mraiders_ui_tests PRIVATE mraiders_core Qt6::Widgets Qt6::Test)
+    add_executable(mraiders_catalog_tests tests/test_catalog.cpp)
+    target_link_libraries(mraiders_catalog_tests PRIVATE mraiders_core Qt6::Test)
+    add_test(NAME catalog_integration COMMAND mraiders_catalog_tests)
     add_test(NAME ui_integration COMMAND mraiders_ui_tests)
     set_tests_properties(ui_integration PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()

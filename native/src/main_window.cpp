@@ -1,5 +1,6 @@
 #include "main_window.h"
 #include "map_view.h"
+#include "catalog_page.h"
 #include <QAction>
 #include <QMenu>
 #include <QCheckBox>
@@ -50,6 +51,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     tabs->setObjectName("mainTabs");
     tabs->addTab(createMapPage(), "Interactive Maps");
     tabs->addTab(createTrackerPage(), "My Progress");
+    tabs->addTab(new CatalogPage(tabs), "Item Library");
     tabs->addTab(createUpdatePage(), "Frozen Trail 2.0");
     setCentralWidget(tabs);
     auto* fileMenu = menuBar()->addMenu("&File");

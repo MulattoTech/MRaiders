@@ -22,7 +22,7 @@ private slots:
         auto* maps = window.findChild<QComboBox*>("mapChoice");
         QVERIFY(tabs != nullptr);
         QVERIFY(maps != nullptr);
-        QCOMPARE(tabs->count(), 3);
+        QCOMPARE(tabs->count(), 4);
         QCOMPARE(maps->count(), 7);
         QCOMPARE(maps->itemText(6), QString("Pendola Pass"));
         auto* route = window.findChild<QListWidget*>("routeList");
