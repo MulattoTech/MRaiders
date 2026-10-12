@@ -32,7 +32,7 @@ jobs:
           set -euo pipefail
           if [[ -f CMakeLists.txt ]]; then
             sudo apt-get update
-            sudo apt-get install -y --no-install-recommends cmake ninja-build qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev
+            sudo apt-get install -y --no-install-recommends cmake ninja-build qt6-base-dev qt6-base-dev-tools libqt6sql6-sqlite libgl1-mesa-dev
             cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
             cmake --build build --parallel 2
             ctest --test-dir build --output-on-failure
