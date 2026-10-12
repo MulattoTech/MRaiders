@@ -84,11 +84,16 @@ bool CatalogStore::upsert(const CatalogEntry& entry, QString* error) {
 QList<CatalogEntry> CatalogStore::search(const QString& query, const QString& kind) const {
     QList<CatalogEntry> found;
     QSqlQuery q(db_);
-    q.prepare("SELECT id,kind,name,source,notes FROM catalog_entries "
-              "WHERE (?='' OR kind=?) AND (?='' OR instr(lower(name),lower(?))>0 "
-              "OR instr(lower(notes),lower(?))>0) ORDER BY name COLLATE NOCASE,id LIMIT 500");
-    q.addBindValue(kind);q.addBindValue(kind);
-    q.addBindValue(query);q.addBindValue(query);q.addBindValue(query);
+    QString statement = "SELECT id,kind,name,source,notes FROM catalog_entries WHERE 1=1";
+    if (!kind.isEmpty()) statement += " AND kind=:kind";
+    if (!query.isEmpty()) statement += " AND (instr(lower(name),lower(:name))>0 OR instr(lower(notes),lower(:notes))>0)";
+    statement += " ORDER BY name COLLATE NOCASE,id LIMIT 500";
+    if (!q.prepare(statement)) return found;
+    if (!kind.isEmpty()) q.bindValue(":kind",kind);
+    if (!query.isEmpty()) {
+        q.bindValue(":name",query);
+        q.bindValue(":notes",query);
+    }
     if (!q.exec()) return found;
     while (q.next()) found.append({q.value(0).toString(), q.value(1).toString(),
                                      q.value(2).toString(), q.value(3).toString(),
