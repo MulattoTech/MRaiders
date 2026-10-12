@@ -12,7 +12,7 @@ Native Qt code is a work-in-progress until CI and Windows smoke tests pass.
 - [x] Manual map zoom, pan, label toggle, search and category filtering
 - [x] Manual route JSON export; offline progress checkbox persistence
 - [x] Frozen Trail/Pendola Pass declared without invented coordinates
-- [ ] Verify Linux CTest and Windows Qt 6.12 packaging CI
+- [x] Verify Linux CTest and Windows Qt 6.12 packaging CI (run 38189068607)
 - [ ] Run a manual Windows UI acceptance test
 - [ ] Create trustworthy map provenance and image calibration flow
 
@@ -34,10 +34,10 @@ Native Qt code is a work-in-progress until CI and Windows smoke tests pass.
 - [ ] Signed Windows releases, SBOM, reproducible release manifest
 
 ## Administration / release gates
-- [ ] Verify requested public repository visibility in GitHub Settings
+- [x] Verify requested public repository visibility via connected GitHub repository API
 - [ ] Create dedicated MRaiders GitHub Project and attach prioritized issues
 - [ ] Enable safe main branch ruleset, required successful CI, and auto-merge
-- [ ] Confirm GitHub Actions and CodeQL entitlements on the chosen repo visibility
+- [x] Confirm GitHub Actions and CodeQL workflows execute successfully on public repo (run 38189068605)
 - [ ] Choose source license and comply with Qt dynamically linked LGPL obligations
 - [ ] Review Embark policies; no guarantee of game-approved overlay behavior
 

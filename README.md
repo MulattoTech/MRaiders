@@ -53,6 +53,11 @@ by the game just because it does not access process memory.
 - [Architecture](ARCHITECTURE.md)
 - [Contribution guide](CONTRIBUTING.md)
 - [Codex continuation prompt](prompts/codex/START.md)
+- [GitHub Project & branch administration](docs/PROJECT_ADMIN.md)
+- [Native development and test playbook](docs/DEVELOPMENT_PLAYBOOK.md)
+- [Security policy](SECURITY.md)
+
+**Verification (2026-10-11):** Native CI validated data, Linux CTest, and Qt 6.12 Windows packaging with executable smoke test. CodeQL passed. The downloaded executable also returned exit code 0 for `--smoke-test` on MulattoTechBox; a real interactive UI acceptance test is still pending. This branch remains a draft PR until release criteria are met.
 - [Official Frozen Trail 2.0 notes](https://id.embark.games/arc-raiders/support/faq/282-2-0-frozen-trail-update)
 
 External content, commercial maps, and third-party product databases are not

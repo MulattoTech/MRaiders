@@ -37,3 +37,6 @@ compile_commands.json
 *.dll
 .qt/
 package/
+
+# Unpacked cloud build artifacts for local acceptance testing
+/.local-artifacts/

@@ -14,7 +14,7 @@ jobs:
     name: Validate data
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate bundled JSON
         shell: bash
         run: |
@@ -41,7 +41,7 @@ jobs:
     needs: data
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install system Qt 6 developer packages
         run: |
           sudo apt-get update
@@ -58,7 +58,7 @@ jobs:
     needs: data
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: jurplel/install-qt-action@v4
         with:
           version: '6.12.0'
@@ -95,7 +95,7 @@ jobs:
           if ($process.ExitCode -ne 0) {
             throw "MRaiders smoke test returned exit code $($process.ExitCode)"
           }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: MRaiders-Windows-Qt-6.12
           path: package/
