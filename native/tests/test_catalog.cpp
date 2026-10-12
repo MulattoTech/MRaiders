@@ -61,6 +61,42 @@ private slots:
         QCOMPARE(shortages.size(), previous.size()); // failed plans never replace prior results
         QVERIFY(!db.planShortages("final", 1000001, &shortages, &error));
     }
+    void portablePackRoundTripAndAtomicRollback() {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        CatalogStore source(dir.filePath("source.sqlite"));
+        CatalogStore destination(dir.filePath("destination.sqlite"));
+        QString error;
+        QVERIFY(source.open(&error));
+        QVERIFY(destination.open(&error));
+        QVERIFY(source.upsert({"widget","item","Widget","user notes","example"},&error));
+        QVERIFY(source.upsert({"plate","item","Plate","user notes","material"},&error));
+        QVERIFY(source.setOwned("plate",4,&error));
+        QVERIFY(source.setNeeded("plate",7,&error));
+        QVERIFY(source.addRecipe("widget","plate",3,&error));
+        const auto pack=source.exportPackage();
+        QVERIFY(!pack.isEmpty());
+        QVERIFY(destination.importPackage(pack,&error));
+        QCOMPARE(destination.search().size(),2);
+        QCOMPARE(destination.owned("plate"),4);
+        QCOMPARE(destination.needed("plate"),7);
+        QCOMPARE(destination.recipe("widget").first().second,3);
+        QVERIFY(!destination.importPackage(
+            R"({"format":"mraiders-catalog","schema_version":2,"entries":[],"recipes":[]})",&error));
+        QCOMPARE(destination.search().size(),2);
+        const QByteArray broken=R"({
+          "format":"mraiders-catalog",
+          "schema_version":1,
+          "entries":[{"id":"new","kind":"item","name":"New","source":"user","notes":""}],
+          "recipes":[{"result_id":"new","ingredient_id":"missing","quantity":1}]
+        })";
+        QVERIFY(!destination.importPackage(broken,&error));
+        QCOMPARE(destination.search("New").size(),0);
+        QCOMPARE(destination.search().size(),2);
+        QVERIFY(!destination.importPackage(
+          R"({"format":"mraiders-catalog","schema_version":1,"entries":[{"id":"dup","kind":"item","name":"One","source":"","notes":""},{"id":"dup","kind":"item","name":"Two","source":"","notes":""}],"recipes":[]})",&error));
+        QCOMPARE(destination.search().size(),2);
+    }
 };
 QTEST_GUILESS_MAIN(CatalogTests)
 #include "test_catalog.moc"

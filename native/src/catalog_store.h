@@ -1,5 +1,6 @@
 #pragma once
 #include <QList>
+#include <QByteArray>
 #include <QString>
 #include <QSqlDatabase>
 
@@ -35,6 +36,8 @@ public:
     bool setOwned(const QString& id, int quantity, QString* error = nullptr);
     int owned(const QString& id) const;
     int schemaVersion() const;
+    QByteArray exportPackage() const;
+    bool importPackage(const QByteArray& bytes, QString* error = nullptr);
 private:
     QString connectionName_;
     QSqlDatabase db_;

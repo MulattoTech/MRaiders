@@ -18,6 +18,8 @@ private:
     void saveCounts();
     void addRecipeIngredient();
     void planMaterials();
+    void importDataPack();
+    void exportDataPack();
     void selectionChanged();
     std::unique_ptr<CatalogStore> store_;
     QLineEdit* search_ = nullptr;
