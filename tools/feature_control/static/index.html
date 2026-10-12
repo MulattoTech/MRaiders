@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf" content="__MR_CSRF_TOKEN__">
+  <title>MRaiders | Feature Control</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div><span class="eyebrow">MULATTOTECH / DEVELOPMENT</span>
+      <h1>MRaiders <span>Feature Control</span></h1>
+      <p>Guided feature intake · Project-first planning · verified code provenance</p>
+    </div>
+    <div><a href="https://github.com/users/MulattoTech/projects/2" target="_blank" rel="noopener">GitHub Project ↗</a>
+      <strong id="health">Connecting…</strong></div>
+  </header>
+  <main>
+    <section class="panel intake" aria-label="Guided feature intake">
+      <div class="section-head"><div><h2>New feature</h2><p>Describe outcomes and acceptance first. A transparent score suggests priority.</p></div><span class="pill">GUIDED INTAKE</span></div>
+      <nav class="steps" aria-label="Intake steps">
+        <button type="button" class="active" data-step="0">1 · Outcome</button>
+        <button type="button" data-step="1">2 · Priority</button>
+        <button type="button" data-step="2">3 · Delivery</button>
+        <button type="button" data-step="3">4 · Review</button>
+      </nav>
+      <form id="featureForm">
+        <div class="step active" data-panel="0">
+          <label>Feature title<input name="title" id="title" required minlength="8" maxlength="140" placeholder="Example: Annotate map source and calibration confidence"></label>
+          <label>User outcome<textarea name="outcome" required minlength="16" rows="4" placeholder="What capability becomes possible? Who benefits?"></textarea></label>
+          <label>Acceptance criteria, one per line<textarea name="acceptance" required minlength="12" rows="5" placeholder="The user can...&#10;The app validates...&#10;A test confirms..."></textarea></label>
+          <label>Constraints and existing behavior to preserve<textarea name="constraints" rows="3" placeholder="Privacy, accuracy, offline functionality, accessibility..."></textarea></label>
+          <aside id="probe" class="probe">Contextual prompts appear after choosing a workstream.</aside>
+        </div>
+        <div class="step" data-panel="1" hidden>
+          <div class="twocol">
+            <label>Workstream<select name="workstream" id="workstream"><option>Infrastructure</option><option>Native</option><option>Maps</option><option>Data</option><option>UX</option><option>Progression</option><option>Planning</option></select></label>
+            <label>Category<select name="category"><option>Feature</option><option>Bug</option><option>Security</option><option>Infrastructure</option><option>Quality</option><option>Documentation</option></select></label>
+            <label>Impact<select name="impact"><option>High</option><option selected>Medium</option><option>Low</option></select></label>
+            <label>Urgency<select name="urgency"><option>High</option><option selected>Medium</option><option>Low</option></select></label>
+            <label>Effort<select name="effort"><option>Small</option><option selected>Medium</option><option>Large</option></select></label>
+            <label>Delivery risk<select name="risk"><option>High</option><option selected>Medium</option><option>Low</option></select></label>
+          </div>
+          <div class="priority-meter"><strong id="suggestion">Suggested: P1</strong><small id="why">Transparency-first rule, not AI certainty.</small></div>
+          <label>Priority (editable)<select name="priority"><option>P0</option><option selected>P1</option><option>P2</option></select></label>
+          <label>Why override, or why this matters<textarea name="justification" rows="2" placeholder="Required only when overriding suggested priority"></textarea></label>
+        </div>
+        <div class="step" data-panel="2" hidden>
+          <label>Dependencies<textarea name="dependencies" rows="3" placeholder="Other MR-issue IDs, required data, or blocked work"></textarea></label>
+          <div class="twocol">
+            <label>Planned AI model<input name="target_model" value="Unassigned" maxlength="120" placeholder="Unassigned"></label>
+            <label>Planned reasoning<select name="target_reasoning"><option>unassigned</option><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>not-exposed</option></select></label>
+          </div>
+          <p class="hint">A planned model is not evidence of which model wrote code. Actual provenance is recorded when the agent commits.</p>
+        </div>
+        <div class="step" data-panel="3" hidden>
+          <h3>Review before publishing</h3>
+          <pre id="review" aria-label="Structured feature preview"></pre>
+          <p class="hint">Publishing creates a GitHub implementation record and adds it to Project #2. No agents launch automatically.</p>
+        </div>
+        <div class="actions"><button type="button" id="back" disabled>← Back</button>
+          <button type="button" id="next">Next →</button>
+          <button type="submit" id="submit" hidden>Create and categorize feature</button>
+        </div>
+        <p class="feedback" id="message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+    <section class="panel backlog" aria-label="Live GitHub Project board">
+      <div class="section-head"><div><h2>Delivery board</h2><p>Project #2 is authoritative. Issues are implementation records—not the dashboard.</p></div><button type="button" id="refresh">↻ Refresh</button></div>
+      <div class="metrics" id="metrics"><span>Loading work items…</span></div>
+      <div class="twocol"><label>Filter priority<select id="priorityFilter"><option>All</option><option>P0</option><option>P1</option><option>P2</option></select></label>
+      <label>Filter stage<select id="statusFilter"><option>All</option><option>Todo</option><option>In Progress</option><option>Done</option></select></label></div>
+      <div id="board" class="board" aria-live="polite">Loading…</div>
+      <p class="hint">Acceptance is separate from implementation status. Completed implementation does not automatically mean PASS.</p>
+    </section>
+  </main>
+  <footer>Runs locally on 127.0.0.1 · Uses existing GitHub CLI authentication · No personal token stored · Not connected to ARC Raiders</footer>
+</body>
+</html>

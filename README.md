@@ -1,5 +1,31 @@
 # MRaiders
 
+## Guided development and audited AI changes
+
+The [MRaiders Development Project](https://github.com/users/MulattoTech/projects/2)
+is the canonical prioritized feature board. A new local Feature Control GUI
+guides intake (outcome, acceptance, priority, impact, risk, effort,
+dependencies and planned model) and shows the live Project backlog:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Start-MRaiders-FeatureControl.ps1
+```
+
+Open `http://127.0.0.1:8765/`. This is a local-only developer tool and
+uses your authenticated GitHub CLI; it neither accesses game state nor
+stores GitHub credentials. It does not automatically launch AI agents.
+
+For every new non-merge commit, the AI provenance workflow validates
+self-declared model/provider/effort, agent/session, feature ID, UTC time
+and validation trailers, and stores immutable Git commit metadata and
+changed file/line hunks in CI artifacts. Declarations are not independent
+proof of which model generated source text.
+
+- [Feature Control guide](docs/FEATURE_CONTROL.md)
+- [AI provenance and hooks](docs/AI_PROVENANCE.md)
+- [Project-first delivery playbook](docs/DELIVERY_PLAYBOOK.md)
+
+
 **MRaiders** is an independent ARC Raiders companion application developed by MulattoTech.
 The project is being modernized from its original Hurricane Cache Electron overlay
 into a **native, offline-first C++20 / Qt desktop app** with a broader feature set.

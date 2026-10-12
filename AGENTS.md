@@ -6,6 +6,20 @@ The new native implementation lives under `native/` and is based on C++20,
 Qt 6.12 LTS target (Qt >= 6.4 developer API), and CMake. The existing Electron
 implementation is preserved as migration reference, not the preferred new app.
 
+## Project-first and AI-audited development
+
+Read `docs/DELIVERY_PLAYBOOK.md`, `docs/AI_PROVENANCE.md`, and `docs/FEATURE_CONTROL.md`.
+GitHub [Project #2](https://github.com/users/MulattoTech/projects/2) is the single
+feature-management board; linked issues hold measurable MR-<number> acceptance contracts.
+Capture actual AI provider, model, reasoning effort (or `not-exposed`), agent,
+session ID, UTC timestamp, changed Git line ranges, issue, and validation
+using commit trailers and the independent CI audit. Never invent model data,
+test evidence, or ACCEPTED/PASS results from a green build alone. Install the
+worktree-local audit hooks with `scripts/Install-MRaiders-AuditHooks.ps1`.
+One feature owner per non-conflicting worktree; CI and protected PR reviews
+control integration. New feature proposals use the loopback-only Feature
+Control GUI and Project Priority/Workstream/Category/Risk/Acceptance fields.
+
 ## Work method
 1. Inspect `docs/ROADMAP.md` and the open issues/PRs before selecting work.
 2. Claim a single feature and affected files in a short-lived branch/PR.
@@ -28,8 +42,7 @@ implementation is preserved as migration reference, not the preferred new app.
 ## Cloud-first development
 - Prefer GitHub Actions/Codespaces for package installs, Qt compilation, tests,
   and Windows artifacts; do not run the game in a VM.
-- Treat failure to obtain GitHub administration/Projects privileges as a
-  documented blocker rather than silently claiming those settings are enabled.
+- Verify GitHub Project #2 and active main branch rules before claiming infrastructure gates are enforced.
 - Use the PR template. Consult prompts/codex/START.md for Codex handoffs.
 
 ## Native checks

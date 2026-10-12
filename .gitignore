@@ -40,3 +40,10 @@ package/
 
 # Unpacked cloud build artifacts for local acceptance testing
 /.local-artifacts/
+
+# Python Feature Control and commit audit
+__pycache__/
+*.pyc
+.pytest_cache/
+/audit/
+.mypy_cache/
