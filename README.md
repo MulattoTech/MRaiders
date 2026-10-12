@@ -1,150 +1,94 @@
-# MRaiders â€” ARC Raiders companion + developer feature control
+# MRaiders
 
-> **Important:** This repository currently contains a historical Electron
-> overlay implementation on main, plus a native Qt modernization in PR #1.
-> No in-game overlay or third-party companion app is guaranteed to be
-> anti-cheat approved. Never distribute proprietary maps or claim game
-> integration that has not been tested or authorized.
+## Guided development and audited AI changes
 
-## Guided development workflow
-
-MRaiders uses the [MRaiders Development Project](https://github.com/users/MulattoTech/projects/2)
-as its canonical backlog, with structured feature intake, auditable AI
-changes, CI evidence and separate acceptance status.
-
-Run the **local Feature Control GUI** (Python 3.11+, existing gh login):
-
-    pwsh -NoProfile -File .\scripts\Start-MRaiders-FeatureControl.ps1
-
-Open http://127.0.0.1:8765/ to submit new capabilities, see prioritized
-P0/P1/P2 work, and link issues to project fields. No tokens are stored in
-the application. This is a developer tool, not a running game overlay.
-
-Docs: [Feature Control](docs/FEATURE_CONTROL.md) Â·
-[AI code provenance](docs/AI_PROVENANCE.md) Â·
-[Delivery playbook](docs/DELIVERY_PLAYBOOK.md)
-
-The Qt product implementation lives in draft PR #1 until accepted.
-
----
-## Legacy Electron documentation (reference only)
-# Arc Raiders Hurricane / First Wave Cache Companion
-
-This project is a lightweight Electron companion for **Arc Raiders** that shows only **static, community-style cache candidate markers**. It supports both a game overlay view and a second-monitor companion view. It does **not** read memory, hook the game, inject code, scrape packets, or do any real-time detection.
-
-## Safety Model
-
-- Historical transparent external overlay (NOT independently approved by Embark)
-- Separate second-monitor companion window using the same previous static marker data
-- Title-based window alignment only
-- Static JSON data loaded from `/data`
-- No process memory access
-- No DLL injection or graphics hooks
-- Intended for borderless and windowed fullscreen use
-
-## Features
-
-- Transparent, click-through, always-on-top overlay window
-- Optional second-monitor window that can run independently from the overlay
-- Auto-follow for a visible matching Arc Raiders game window on Windows
-- Configurable window-title hint if the game caption differs on your setup
-- Searchable marker directory with notes and coordinate references inside the calibration panel
-- Keyboard calibration nudging with arrow keys and `Shift` for larger steps
-- Independent view toggles so the game overlay, second-monitor view, both, or neither can be active
-- Global hotkeys:
-  - `F8` toggle game overlay visibility
-  - `F9` cycle the active map layer
-  - `F10` reload JSON data from disk
-- Tray menu for calibration, data reload, map switching, and quitting
-- In-overlay calibration panel for:
-  - opacity
-  - marker size
-  - X/Y offsets
-  - X/Y scale
-  - label visibility
-  - map selection
-  - editable window-title hint
-  - quick close with `Esc`
-- Settings persistence via `electron-store`
-
-## Project Structure
-
-- `main.js` Electron main process, tray, hotkeys, persistence, title-based tracking, and second-monitor window management
-- `preload.js` safe IPC bridge for the renderer
-- `renderer.js` lightweight marker drawing and calibration UI logic
-- `styles.css` transparent overlay and panel styling
-- `assets/app-icon.svg` tray and future packaging icon source
-- `lib/defaults.js` shared map metadata and settings schema
-- `lib/map-data.js` static JSON normalization and loading
-- `lib/overlay-state.js` renderer/main shared state assembly
-- `lib/window-probe.js` PowerShell wrapper for safe external window bounds lookup
-- `scripts/find-arc-raiders-window.ps1` Windows top-level window probe
-- `scripts/launch-electron.js` Codespaces-safe Electron launcher
-- `scripts/smoke.js` headless Electron smoke check for Codespaces
-- `scripts/validate-data.js` static marker data validation
-- `tests/*.test.js` Node test suite for settings, data loading, and runtime helpers
-- `data/*.json` static community-style marker files
-
-## Data Notes
-
-The bundled JSON files are **starter datasets** intended to be safe, editable, and immediately usable. They are based on public community location callouts and should be treated as **possible cache candidates**, not guaranteed live spawns.
-
-## Run
+The [MRaiders Development Project](https://github.com/users/MulattoTech/projects/2)
+is the canonical prioritized feature board. A new local Feature Control GUI
+guides intake (outcome, acceptance, priority, impact, risk, effort,
+dependencies and planned model) and shows the live Project backlog:
 
 ```powershell
-npm install
-npm start
+pwsh -NoProfile -File .\scripts\Start-MRaiders-FeatureControl.ps1
 ```
 
-Then use the tray icon to open the calibration panel and line the markers up over the Arc Raiders in-game map.
+Open `http://127.0.0.1:8765/`. This is a local-only developer tool and
+uses your authenticated GitHub CLI; it neither accesses game state nor
+stores GitHub credentials. It does not automatically launch AI agents.
 
-The control panel lets you independently toggle:
+For every new non-merge commit, the AI provenance workflow validates
+self-declared model/provider/effort, agent/session, feature ID, UTC time
+and validation trailers, and stores immutable Git commit metadata and
+changed file/line hunks in CI artifacts. Declarations are not independent
+proof of which model generated source text.
 
-- the transparent game overlay
-- the second-monitor companion view
+- [Feature Control guide](docs/FEATURE_CONTROL.md)
+- [AI provenance and hooks](docs/AI_PROVENANCE.md)
+- [Project-first delivery playbook](docs/DELIVERY_PLAYBOOK.md)
 
-That means you can run overlay only, second-monitor only, both, or neither while keeping the same shared marker data and calibration settings.
 
-## Checks
+**MRaiders** is an independent ARC Raiders companion application developed by MulattoTech.
+The project is being modernized from its original Hurricane Cache Electron overlay
+into a **native, offline-first C++20 / Qt desktop app** with a broader feature set.
 
-```powershell
-npm run lint
-npm test
-npm run validate:data
-npm run smoke
-npm run build
+> **Work in progress.** Native development is on the refactor PR; existing Electron
+> sources remain preserved. MRaiders is not affiliated with or endorsed by Embark Studios.
+
+## Current native functionality
+
+- Seven registered map areas: Dam Battlegrounds, Blue Gate, Buried City,
+  Spaceport, Stella Montis, Riven Tides, and **Pendola Pass** (Frozen Trail 2.0).
+- Pan/zoom map canvas with searchable, filterable candidate markers.
+- User-imported local reference map images (no copyrighted images distributed).
+- Select markers, maintain map-specific manual routes, and export route JSON.
+- Persistent manual progression checklist for Frozen Trail milestones.
+- Offline application; **no game interaction, screen capture, memory reading,
+  network interception, input automation, or injected overlay**.
+- CMake build, QtTest data checks, and GitHub Actions Windows build artifact workflow.
+
+### Data accuracy
+The four original cache JSON datasets are **unverified starter candidate data**,
+not confirmed spawn locations. The three newer map files deliberately contain
+empty spawn arrays until independently verified, licensed community contributions
+are received. Marker coordinates use normalized 0..1 image-space values.
+Images require matching map boundaries or additional calibration work.
+
+## Build native (Qt 6.12 recommended)
+
+Install a Qt 6 Widgets developer kit (minimum supported CMake API version 6.4),
+CMake 3.22+, C++20 compiler, and Ninja:
+
+```sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
 ```
 
-- `npm run smoke` launches Electron headlessly in Codespaces with container-only compatibility flags
-- `npm run build` produces a host-platform unpacked build for verification in the current environment
-- `npm run build:win` creates the Windows portable build when run on a Windows-capable packaging machine
+Windows releases are built in **GitHub Actions** rather than requiring a Qt
+installation on your PC. Download the `MRaiders-Windows-Qt-6.12` artifact from
+a successful Native CI run and open `MRaiders.exe` inside its extracted folder.
+It is not a signed installer or certified public release.
 
-## Codespaces
+For the previous Electron version, `npm ci && npm test` remains available
+from the repository root. Do not assume the old Electron overlay is permitted
+by the game just because it does not access process memory.
 
-This repo includes a basic `.devcontainer` so it can be opened in GitHub Codespaces for cloud-first development.
+## Work and collaboration
 
-- Use Codespaces for editing, dependency installs, documentation, and general project work
-- `npm start` launches Electron through a Codespaces-aware wrapper that clears `ELECTRON_RUN_AS_NODE`
-- `scripts/bootstrap-codespace.sh` is the repeatable Codespaces bootstrap entry point and is wired into `postCreateCommand`
-- The bootstrap step installs the Linux libraries Electron needs for `npm start` and `npm run smoke`
-- Use a local Windows machine for final Electron overlay validation
-- Transparent click-through behavior, global hotkeys, Arc Raiders window alignment, and second-monitor placement should be tested locally
+- [Roadmap](docs/ROADMAP.md)
+- [Agent contract](AGENTS.md)
+- [Architecture](ARCHITECTURE.md)
+- [Contribution guide](CONTRIBUTING.md)
+- [Codex continuation prompt](prompts/codex/START.md)
+- [GitHub Project & branch administration](docs/PROJECT_ADMIN.md)
+- [Native development and test playbook](docs/DEVELOPMENT_PLAYBOOK.md)
+- [Security policy](SECURITY.md)
 
-## Packaging
+**Verification (2026-10-11):** Native CI validated data, Linux CTest, and Qt 6.12 Windows packaging with executable smoke test. CodeQL passed. The downloaded executable also returned exit code 0 for `--smoke-test` on MulattoTechBox; a real interactive UI acceptance test is still pending. This branch remains a draft PR until release criteria are met.
+- [Official Frozen Trail 2.0 notes](https://id.embark.games/arc-raiders/support/faq/282-2-0-frozen-trail-update)
 
-Packaging metadata is staged in `package.json` and `electron-builder` is installed.
+External content, commercial maps, and third-party product databases are not
+bundled. Qt licensing obligations apply to redistributed Qt runtime libraries.
+A project source-code license has not yet been selected; verify licensing before
+accepting external code contributions or publishing a redistributed release.
 
-Use the host-platform directory build for container verification:
-
-```powershell
-npm run build
-```
-
-Use the Windows portable target for actual overlay distribution:
-
-```powershell
-npm run build:win
-```
-
-**Current development preview:** Feature Control is on PR #17 and can be run
-from `C:\tools\dev\MRaiders-AuditControl` before it is merged to main.
+*ARC Raiders and related names are trademarks of their respective owners.*

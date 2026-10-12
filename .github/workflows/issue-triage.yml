@@ -1,0 +1,46 @@
+name: Issue triage
+on:
+  issues:
+    types: [opened, edited]
+permissions:
+  contents: read
+  issues: write
+jobs:
+  categorize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tag priority and area from MRaiders issue titles
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const title = context.payload.issue.title;
+            const labels = [];
+            const priorities = ['P0','P1','P2'];
+            for (const p of priorities) {
+              if (title.includes('[' + p + ']')) labels.push('priority:' + p.toLowerCase());
+            }
+            const areas = ['Infrastructure','Native','Maps','Data','Features','Progression','Development'];
+            for (const area of areas) {
+              if (title.includes('[' + area + ']')) labels.push('area:' + area.toLowerCase());
+            }
+            for (const name of labels) {
+              try {
+                await github.rest.issues.getLabel({...context.repo, name});
+              } catch (err) {
+                if (err.status !== 404) throw err;
+                try {
+                  await github.rest.issues.createLabel({
+                    ...context.repo, name,
+                    color: name.startsWith('priority:') ? 'd97706' : '2563eb',
+                    description: 'Automatically classified MRaiders work item'
+                  });
+                } catch (createError) {
+                  if (createError.status !== 422) throw createError;
+                }
+              }
+            }
+            if (labels.length) {
+              await github.rest.issues.addLabels({
+                ...context.repo, issue_number: context.issue.number, labels
+              });
+            }
