@@ -1,0 +1,5 @@
+#!/bin/sh
+# Local guard; GitHub Actions independently checks repository commits.
+if test -f "$(git rev-parse --git-path MERGE_HEAD)"; then exit 0; fi
+command -v python >/dev/null 2>&1 && py=python || py=python3
+"$py" -m tools.audit.provenance check-message "$1"

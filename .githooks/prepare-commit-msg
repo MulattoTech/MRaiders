@@ -1,0 +1,5 @@
+#!/bin/sh
+# Auto-append actual session declaration to this worktree's commit.
+case "$2" in merge|squash|commit) exit 0;; esac
+command -v python >/dev/null 2>&1 && py=python || py=python3
+"$py" -m tools.audit.provenance append-context "$1"
