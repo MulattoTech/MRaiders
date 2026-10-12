@@ -37,5 +37,5 @@ private slots:
         }
     }
 };
-QTEST_APPLESS_MAIN(CatalogTests)
+QTEST_GUILESS_MAIN(CatalogTests)
 #include "test_catalog.moc"
