@@ -5,7 +5,7 @@ Inspired by MJobs' commit provenance validator, this policy starts for new commi
 ## Every newly authored commit
 Required metadata fields: Change-Origin (AI, Mixed, Human, Bot); AI-Agent, AI-Provider, AI-Model, AI-Reasoning, AI-Session, AI-UTC-Date, Feature-ID, Validation. For human commits AI-Model must be none and AI-Reasoning n/a. For undisclosed ChatGPT Web reasoning use not-exposed; never invent a setting or passing test.
 
-GitHub Actions computes SHA, author, Git dates, changed file names and exact diff-hunk new-line ranges. It uploads a JSON and Markdown report and comments on the PR once per new head SHA. `git blame -L start,end -- filename` provides line-level history without polluting every line with comments.
+GitHub Actions computes SHA, author, Git dates, changed file names and exact diff-hunk new-line ranges. It uploads a JSON and Markdown report and comments on the PR once per new head SHA. The booking note now includes each commit's specific file and changed-line ranges (e.g. `native/main.cpp L7-L14`), making ordinary audit records durable in PR history even when the downloadable artifact expires. `git blame -L start,end -- filename` provides line-level history without polluting every line with comments.
 
 **Limit:** model/reasoning info is explicitly self-declared, not cryptographically verified by Git. A planned model in Feature Control is NOT implementation evidence. A commit touching multiple AI agents cannot prove which model authored each line; document ambiguity in the PR.
 

@@ -93,4 +93,23 @@ class AuditTests(unittest.TestCase):
             ranges=results["entries"][0]["hunks"]
             self.assertTrue(any(x["file"]=="demo.cpp" and x["added_lines"]==2 for x in ranges),ranges)
 
+    def test_audit_comment_persists_exact_changed_blocks(self):
+        from tools.audit.provenance import markdown
+        doc={"head":"a"*40,"pass":True,"legacy_commits_exempted":0,
+             "entries":[{"commit":"b"*40,"author":"Test Agent",
+                         "authored_at":"2026-10-11T21:00:00Z",
+                         "diff_hunk_count":2,
+                         "declaration":{"Change-Origin":"AI","AI-Agent":"ChatGPT Web",
+                                        "AI-Model":"GPT-6","AI-Reasoning":"not-exposed",
+                                        "Feature-ID":"MR-13"},
+                         "hunks":[{"file":"native/main.cpp","line_start":7,"line_end":14,"added_lines":8},
+                                   {"file":"native/main.cpp","line_start":31,"line_end":31,"added_lines":1}]}],
+             "errors":[]}
+        note=markdown(doc)
+        self.assertIn("Auditable changed code blocks",note)
+        self.assertIn("L7-L14",note)
+        self.assertIn("L31-L31",note)
+        self.assertIn("native/main.cpp",note)
+        self.assertIn("ChatGPT Web / GPT-6",note)
+
 if __name__=="__main__":unittest.main()

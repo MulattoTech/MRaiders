@@ -157,8 +157,23 @@ def markdown(doc):
                     f" | {t.get('Change-Origin') or 'Bot'} | {t.get('AI-Agent') or entry['author']} / {t.get('AI-Model') or 'none'}"
                     f" | {t.get('AI-Reasoning') or 'n/a'} | {t.get('Feature-ID') or 'BOT'}"
                     f" | {entry['diff_hunk_count']} | {entry['authored_at'][:19]} |")
-    rows+=["",f"Audited line ranges and full metadata are available in the artifact `mraiders-ai-provenance` for head `{doc['head']}`. ",
-           "Use `git blame` for line-by-line history; merges and pre-policy commits are not attributed to a fictional model."]
+    # Keep durable file/hunk references in the PR comment, not only in an
+    # expiring Actions artifact. These ranges are the changed lines *after*
+    # each commit, not verified AI model authorship of every individual line.
+    rows += ["", "#### Auditable changed code blocks", ""]
+    for entry in doc["entries"]:
+        rows.append("- Commit `" + entry["commit"][:12] + "`:")
+        if not entry["hunks"]:
+            rows.append("  - No added/modified post-commit line ranges (possibly deletion only).")
+        for hunk in entry["hunks"]:
+            filename = hunk["file"].replace("|", "\\|").replace("`", "")
+            if hunk["added_lines"] == 0:
+                location = f"deletion at post-commit line {hunk['line_start']}"
+            else:
+                location = f"L{hunk['line_start']}-L{hunk['line_end']}"
+            rows.append(f"  - `{filename}` — `{location}` ({hunk['added_lines']} new/changed lines)")
+    rows += ["", f"Full machine-readable metadata: CI artifact `mraiders-ai-provenance` for head `{doc['head']}`.",
+             "Use `git blame` for line-by-line history; pre-policy and merge commits do not have invented model attribution."]
     if doc["errors"]:rows+=["","**Validation errors:**",*["- "+x for x in doc["errors"]]]
     return "\n".join(rows)+"\n"
 
