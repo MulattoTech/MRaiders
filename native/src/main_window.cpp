@@ -9,6 +9,7 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -103,6 +104,21 @@ QWidget* MainWindow::createMapPage() {
     sideLayout->addWidget(showLabels_);
     auto* imageButton = new QPushButton("Load Reference Map Image", side);
     sideLayout->addWidget(imageButton);
+    auto* pickAnchorButton = new QPushButton("Align Selected Marker to Image...", side);
+    pickAnchorButton->setObjectName("pickAnchorButton");
+    sideLayout->addWidget(pickAnchorButton);
+    auto* resetAlignmentButton = new QPushButton("Reset Map Alignment", side);
+    resetAlignmentButton->setObjectName("resetAlignmentButton");
+    sideLayout->addWidget(resetAlignmentButton);
+    auto* manualAnchorButton = new QPushButton("Pick Independent Map Coordinate...", side);
+    manualAnchorButton->setObjectName("manualAnchorButton");
+    sideLayout->addWidget(manualAnchorButton);
+    auto* importAlignmentButton = new QPushButton("Import Alignment JSON...", side);
+    importAlignmentButton->setObjectName("importAlignmentButton");
+    sideLayout->addWidget(importAlignmentButton);
+    auto* exportAlignmentButton = new QPushButton("Export Alignment JSON...", side);
+    exportAlignmentButton->setObjectName("exportAlignmentButton");
+    sideLayout->addWidget(exportAlignmentButton);
     auto* resetButton = new QPushButton("Reset Zoom", side);
     sideLayout->addWidget(resetButton);
     mapStatus_ = new QLabel(side);
@@ -155,6 +171,12 @@ QWidget* MainWindow::createMapPage() {
     connect(clearButton, &QPushButton::clicked, this, &MainWindow::clearRoute);
     connect(exportButton, &QPushButton::clicked, this, &MainWindow::exportRoute);
     connect(imageButton, &QPushButton::clicked, this, &MainWindow::importMapImage);
+    connect(pickAnchorButton, &QPushButton::clicked, this, &MainWindow::startCalibrationPick);
+    connect(manualAnchorButton, &QPushButton::clicked, this, &MainWindow::startManualCalibrationPick);
+    connect(importAlignmentButton, &QPushButton::clicked, this, &MainWindow::importCalibration);
+    connect(exportAlignmentButton, &QPushButton::clicked, this, &MainWindow::exportCalibration);
+    connect(resetAlignmentButton, &QPushButton::clicked, this, &MainWindow::clearCalibration);
+    connect(view_, &MapView::calibrationPointPicked, this, &MainWindow::finishCalibrationPick);
     connect(resetButton, &QPushButton::clicked, view_, &MapView::resetZoom);
     return page;
 }
@@ -170,9 +192,11 @@ void MainWindow::chooseMap(int index) {
     selectedId_.clear();
     detail_->setText("Select a marker to inspect it.");
     view_->setMap(map);
+    calibrationAnchors_.clear();
     const QString background = settings_.value("background/" + map.id).toString();
     if (!background.isEmpty() && !view_->setBackgroundImage(background))
         statusBar()->showMessage("Previously selected reference image is unavailable.");
+    restoreCalibration(map.id);
     routeList_->clear();
     for (const QString& id : settings_.value("route/" + map.id).toStringList()) {
         for (const Marker& marker : map.markers) if (marker.id == id) {
@@ -253,9 +277,186 @@ void MainWindow::importMapImage() {
         QMessageBox::warning(this, "Invalid image", "Cannot read the selected map image.");
         return;
     }
+    const QString previous = settings_.value("background/" + map->id).toString();
     settings_.setValue("background/" + map->id, path);
+    if (previous != path) {
+        calibrationAnchors_.clear();
+        settings_.remove("calibration/" + map->id);
+        view_->setCalibration(QTransform());
+        statusBar()->showMessage("Reference changed; alignment reset. Re-pick anchors.", 7000);
+    }
     view_->resetZoom();
 }
+void MainWindow::restoreCalibration(const QString& mapId) {
+    const QByteArray saved = settings_.value("calibration/" + mapId).toByteArray();
+    if (saved.isEmpty()) return;
+    QString error;
+    const auto anchors = Calibration::decode(saved, &error);
+    if (!anchors) {
+        statusBar()->showMessage("Stored alignment invalid: " + error, 10000);
+        return;
+    }
+    const auto matrix = Calibration::fit(*anchors, &error);
+    if (!matrix) {
+        statusBar()->showMessage("Stored alignment could not be fitted: " + error, 10000);
+        return;
+    }
+    calibrationAnchors_ = *anchors;
+    view_->setCalibration(*matrix);
+}
+
+void MainWindow::startCalibrationPick() {
+    const MapData* map = activeMap();
+    if (!map || selectedId_.isEmpty()) {
+        QMessageBox::information(this, "Choose a reference",
+            "First select a marker with a known location on your reference image.");
+        return;
+    }
+    if (!view_->hasReferenceImage()) {
+        QMessageBox::information(this, "Import an image",
+            "Load a reference map image before selecting alignment anchors.");
+        return;
+    }
+    if (calibrationAnchors_.size() >= 3) {
+        QMessageBox::information(this, "Three anchors reached",
+            "Reset alignment to start a new anchor set.");
+        return;
+    }
+    for (const Marker& marker : map->markers) {
+        if (marker.id != selectedId_) continue;
+        pendingMapAnchor_ = QPointF(marker.x, marker.y);
+        view_->beginCalibrationPick();
+        statusBar()->showMessage(
+            "Click the selected landmark's position on the imported map. "
+            "Right-click to cancel. Markers are unverified candidates.", 15000);
+        return;
+    }
+}
+
+void MainWindow::startManualCalibrationPick() {
+    const MapData* map = activeMap();
+    if (!map) return;
+    if (!view_->hasReferenceImage()) {
+        QMessageBox::information(this, "Import an image",
+            "Load your own reference map image first.");
+        return;
+    }
+    if (calibrationAnchors_.size() >= 3) {
+        QMessageBox::information(this, "Three anchors reached",
+            "Reset alignment to start a new anchor set.");
+        return;
+    }
+    bool accepted = false;
+    const double x = QInputDialog::getDouble(this, "Known logical point",
+        "Known map X fraction (0..1)", 0.5, 0.0, 1.0, 6, &accepted);
+    if (!accepted) return;
+    const double y = QInputDialog::getDouble(this, "Known logical point",
+        "Known map Y fraction (0..1)", 0.5, 0.0, 1.0, 6, &accepted);
+    if (!accepted) return;
+    pendingMapAnchor_ = QPointF(x, y);
+    view_->beginCalibrationPick();
+    statusBar()->showMessage(
+        "Click the corresponding point on your reference image; right-click cancels.", 15000);
+}
+
+void MainWindow::importCalibration() {
+    const MapData* map = activeMap();
+    if (!map) return;
+    if (!view_->hasReferenceImage()) {
+        QMessageBox::information(this, "Import an image",
+            "Load the reference image before importing its alignment.");
+        return;
+    }
+    const QString path = QFileDialog::getOpenFileName(this,
+        "Import MRaiders alignment", QString(), "JSON (*.json)");
+    if (path.isEmpty()) return;
+    QFile input(path);
+    if (!input.open(QIODevice::ReadOnly) || input.size() > 65536) {
+        QMessageBox::warning(this, "Invalid file", "Could not open alignment or file is too large.");
+        return;
+    }
+    const QByteArray contents = input.readAll();
+    const QJsonDocument document = QJsonDocument::fromJson(contents);
+    if (!document.isObject() ||
+        document.object().value("mapId").toString() != map->id) {
+        QMessageBox::warning(this, "Wrong map",
+            "Alignment JSON must contain this exact mapId.");
+        return;
+    }
+    QString error;
+    const auto anchors = Calibration::decode(contents, &error);
+    if (!anchors) {
+        QMessageBox::warning(this, "Invalid alignment", error);
+        return;
+    }
+    const auto matrix = Calibration::fit(*anchors, &error);
+    if (!matrix) {
+        QMessageBox::warning(this, "Cannot align", error);
+        return;
+    }
+    calibrationAnchors_ = *anchors;
+    view_->setCalibration(*matrix);
+    settings_.setValue("calibration/" + map->id, Calibration::encode(*anchors));
+    statusBar()->showMessage("Imported and validated alignment for " + map->name, 9000);
+}
+
+void MainWindow::exportCalibration() {
+    const MapData* map = activeMap();
+    if (!map || calibrationAnchors_.size() < 2) {
+        QMessageBox::information(this, "No saved alignment",
+            "Create a valid alignment with two or three anchors first.");
+        return;
+    }
+    const QString path = QFileDialog::getSaveFileName(this,
+        "Export MRaiders alignment", map->id + "_alignment.json", "JSON (*.json)");
+    if (path.isEmpty()) return;
+    QJsonObject data = QJsonDocument::fromJson(
+        Calibration::encode(calibrationAnchors_)).object();
+    data["mapId"] = map->id;
+    data["verification"] = "user_supplied_unverified";
+    data["reference"] = "User-owned reference map image (not included)";
+    const QByteArray output = QJsonDocument(data).toJson(QJsonDocument::Indented);
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
+        file.write(output) != output.size()) {
+        QMessageBox::warning(this, "Export failed", file.errorString());
+        return;
+    }
+    statusBar()->showMessage("Alignment exported (no image or game data included).", 8000);
+}
+
+void MainWindow::finishCalibrationPick(const QPointF& imagePoint) {
+    const MapData* map = activeMap();
+    if (!map) return;
+    QVector<CalibrationAnchor> candidate = calibrationAnchors_;
+    candidate.append({pendingMapAnchor_, imagePoint});
+    if (candidate.size() == 1) {
+        calibrationAnchors_ = candidate;
+        statusBar()->showMessage("First anchor captured. Pick a second distinct marker.", 10000);
+        return;
+    }
+    QString error;
+    const auto transform = Calibration::fit(candidate, &error);
+    if (!transform) {
+        QMessageBox::warning(this, "Cannot align reference", error);
+        return; // Preserve last known-good transform and anchor set.
+    }
+    calibrationAnchors_ = candidate;
+    view_->setCalibration(*transform);
+    settings_.setValue("calibration/" + map->id, Calibration::encode(candidate));
+    statusBar()->showMessage(QString("%1-anchor map alignment saved for %2.")
+                              .arg(candidate.size()).arg(map->name), 9000);
+}
+
+void MainWindow::clearCalibration() {
+    const MapData* map = activeMap();
+    if (!map) return;
+    calibrationAnchors_.clear();
+    settings_.remove("calibration/" + map->id);
+    view_->setCalibration(QTransform());
+    statusBar()->showMessage("Map alignment reset to identity.", 6000);
+}
+
 void MainWindow::exportRoute() {
     const MapData* map = activeMap();
     if (!map) return;

@@ -1,5 +1,6 @@
 add_library(mraiders_core STATIC
     src/map_repository.cpp
+    src/calibration.cpp
     src/tracker_repository.cpp
 )
 target_include_directories(mraiders_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -19,6 +20,10 @@ if(BUILD_TESTING)
     target_link_libraries(mraiders_data_tests PRIVATE mraiders_core Qt6::Test)
     add_test(NAME data_validation COMMAND mraiders_data_tests)
     set_tests_properties(data_validation PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(mraiders_calibration_tests tests/test_calibration.cpp)
+    target_link_libraries(mraiders_calibration_tests PRIVATE mraiders_core Qt6::Test)
+    add_test(NAME map_calibration COMMAND mraiders_calibration_tests)
+    set_tests_properties(map_calibration PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(mraiders_ui_tests
         tests/test_ui.cpp
         src/main_window.cpp

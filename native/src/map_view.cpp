@@ -5,6 +5,7 @@
 #include <QWheelEvent>
 #include <QPixmap>
 #include <QBrush>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QTimer>
 
@@ -28,6 +29,9 @@ MapView::MapView(QWidget* parent) : QGraphicsView(parent), scene_(this) {
 void MapView::setMap(const MapData& map) {
     map_ = map;
     backgroundPath_.clear();
+    calibration_ = QTransform();
+    calibrationPickActive_ = false;
+    unsetCursor();
     redraw();
     QTimer::singleShot(0, this, [this] { resetZoom(); });
 }
@@ -54,6 +58,43 @@ bool MapView::setBackgroundImage(const QString& path) {
     redraw();
     return true;
 }
+void MapView::setCalibration(const QTransform& matrix) {
+    calibration_ = matrix;
+    redraw();
+}
+
+void MapView::beginCalibrationPick() {
+    calibrationPickActive_ = true;
+    setCursor(Qt::CrossCursor);
+}
+
+void MapView::mousePressEvent(QMouseEvent* event) {
+    if (!calibrationPickActive_) {
+        QGraphicsView::mousePressEvent(event);
+        return;
+    }
+    if (event->button() == Qt::RightButton) {
+        calibrationPickActive_ = false;
+        unsetCursor();
+        event->accept();
+        return;
+    }
+    if (event->button() != Qt::LeftButton) {
+        event->ignore();
+        return;
+    }
+    const QPointF scenePosition = mapToScene(event->position().toPoint());
+    if (!scene_.sceneRect().contains(scenePosition)) {
+        event->accept();
+        return; // User may zoom/pan; ignore image-exterior clicks.
+    }
+    calibrationPickActive_ = false;
+    unsetCursor();
+    emit calibrationPointPicked(QPointF(scenePosition.x() / canvasWidth,
+                                       scenePosition.y() / canvasHeight));
+    event->accept();
+}
+
 void MapView::redraw() {
     circles_.clear();
     labels_.clear();
@@ -77,8 +118,9 @@ void MapView::redraw() {
         line->setZValue(-1);
     }
     for (const Marker& marker : map_.markers) {
-        const qreal x = marker.x * canvasWidth;
-        const qreal y = marker.y * canvasHeight;
+        const QPointF target = calibration_.map(QPointF(marker.x, marker.y));
+        const qreal x = target.x() * canvasWidth;
+        const qreal y = target.y() * canvasHeight;
         auto* circle = scene_.addEllipse(x - 7, y - 7, 14, 14,
                                          QPen(QColor("#101827"), 2), QBrush(map_.accent));
         circle->setFlag(QGraphicsItem::ItemIsSelectable);
