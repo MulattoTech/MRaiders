@@ -11,6 +11,11 @@ struct CatalogEntry {
     QString notes;
 };
 
+struct MaterialShortage {
+    QString id;
+    int missing = 0;
+};
+
 class CatalogStore {
 public:
     explicit CatalogStore(const QString& databasePath);
@@ -22,6 +27,9 @@ public:
     QList<CatalogEntry> search(const QString& query = {}, const QString& kind = {}) const;
     bool addRecipe(const QString& resultId, const QString& ingredientId, int quantity, QString* error = nullptr);
     QList<QPair<QString, int>> recipe(const QString& resultId) const;
+    // Recursively expands recipes, consumes owned counts once, detects cycles.
+    bool planShortages(const QString& id, int amount, QList<MaterialShortage>* shortages,
+                       QString* error = nullptr) const;
     bool setNeeded(const QString& id, int quantity, QString* error = nullptr);
     int needed(const QString& id) const;
     bool setOwned(const QString& id, int quantity, QString* error = nullptr);

@@ -7,6 +7,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
+#include <QInputDialog>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSpinBox>
@@ -62,6 +63,16 @@ CatalogPage::CatalogPage(QWidget* parent) : QWidget(parent) {
     save->setObjectName("catalogSaveCounts");
     counts->addWidget(save);
     layout->addLayout(counts);
+    auto* recipeActions = new QHBoxLayout;
+    auto* ingredientButton = new QPushButton("Add Recipe Ingredient", this);
+    ingredientButton->setObjectName("catalogRecipeAdd");
+    auto* planButton = new QPushButton("Plan Crafting Shortages", this);
+    planButton->setObjectName("catalogPlan");
+    recipeActions->addWidget(ingredientButton);
+    recipeActions->addWidget(planButton);
+    layout->addLayout(recipeActions);
+    connect(ingredientButton, &QPushButton::clicked, this, &CatalogPage::addRecipeIngredient);
+    connect(planButton, &QPushButton::clicked, this, &CatalogPage::planMaterials);
     status_ = new QLabel(this);
     status_->setWordWrap(true);
     layout->addWidget(status_);
@@ -109,6 +120,60 @@ void CatalogPage::saveCounts() {
     if(!store_->setOwned(id,owned_->value(),&error) || !store_->setNeeded(id,needed_->value(),&error))
         QMessageBox::warning(this,"Save counts",error);
     else status_->setText("Saved owned and needed counts for " + id);
+}
+
+void CatalogPage::addRecipeIngredient() {
+    const int row = results_->currentRow();
+    if (row < 0 || !results_->item(row, 3)) {
+        status_->setText("Select a resulting item or blueprint first.");
+        return;
+    }
+    const QString resultId = results_->item(row, 3)->text();
+    QStringList choices;
+    for (const auto& entry : store_->search()) {
+        if (entry.id != resultId && entry.kind == "item") choices.append(entry.id);
+    }
+    if (choices.isEmpty()) {
+        status_->setText("Add at least one ingredient item to the library first.");
+        return;
+    }
+    bool accepted = false;
+    const QString ingredient = QInputDialog::getItem(
+        this, "Recipe ingredient", "Ingredient ID", choices, 0, false, &accepted);
+    if (!accepted || ingredient.isEmpty()) return;
+    const int quantity = QInputDialog::getInt(
+        this, "Recipe quantity", "Quantity per craft", 1, 1, 100000, 1, &accepted);
+    if (!accepted) return;
+    QString error;
+    if (!store_->addRecipe(resultId, ingredient, quantity, &error))
+        QMessageBox::warning(this, "Recipe save failed", error);
+    else status_->setText(QString("Saved: %1 requires %2 x %3")
+        .arg(resultId).arg(quantity).arg(ingredient));
+}
+
+void CatalogPage::planMaterials() {
+    const int row = results_->currentRow();
+    if (row < 0 || !results_->item(row, 3)) {
+        status_->setText("Select the item to craft first.");
+        return;
+    }
+    const QString id = results_->item(row, 3)->text();
+    bool accepted = false;
+    const int amount = QInputDialog::getInt(
+        this, "Crafting target", "Desired quantity", 1, 1, 10000, 1, &accepted);
+    if (!accepted) return;
+    QList<MaterialShortage> shortages;
+    QString error;
+    if (!store_->planShortages(id, amount, &shortages, &error)) {
+        QMessageBox::warning(this, "Cannot plan materials", error);
+        return;
+    }
+    QStringList report;
+    for (const auto& shortage : shortages)
+        report.append(QString("%1: %2 missing").arg(shortage.id).arg(shortage.missing));
+    QMessageBox::information(this, "Offline material requirements",
+        report.isEmpty() ? "Already covered by owned quantities." : report.join("\n"));
+    status_->setText("Planned requirements for " + id + " (" + QString::number(amount) + ").");
 }
 
 void CatalogPage::addEntry() {

@@ -36,6 +36,31 @@ private slots:
             QCOMPARE(db.recipe("bp").first().second,5);
         }
     }
+    void craftingPlanUsesInventoryAndRejectsCycles() {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        CatalogStore db(dir.filePath("plan.sqlite"));
+        QString error;
+        QVERIFY2(db.open(&error), qPrintable(error));
+        for (const auto& id : {"final", "middle", "raw"}) {
+            QVERIFY(db.upsert({id, "item", id, "manual test", ""}, &error));
+        }
+        QVERIFY(db.addRecipe("final", "middle", 2, &error));
+        QVERIFY(db.addRecipe("middle", "raw", 3, &error));
+        QVERIFY(db.setOwned("middle", 1, &error));
+        QVERIFY(db.setOwned("raw", 2, &error));
+        QList<MaterialShortage> shortages;
+        QVERIFY2(db.planShortages("final", 1, &shortages, &error), qPrintable(error));
+        QCOMPARE(shortages.size(), 1);
+        QCOMPARE(shortages[0].id, QString("raw"));
+        QCOMPARE(shortages[0].missing, 1);
+        QVERIFY(db.addRecipe("raw", "final", 1, &error));
+        const auto previous = shortages;
+        QVERIFY(!db.planShortages("final", 2, &shortages, &error));
+        QVERIFY(error.contains("cycle", Qt::CaseInsensitive));
+        QCOMPARE(shortages.size(), previous.size()); // failed plans never replace prior results
+        QVERIFY(!db.planShortages("final", 1000001, &shortages, &error));
+    }
 };
 QTEST_GUILESS_MAIN(CatalogTests)
 #include "test_catalog.moc"
