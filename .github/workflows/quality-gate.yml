@@ -43,6 +43,9 @@ jobs:
           set -euo pipefail
           if [[ -f tools/feature_control/core.py ]]; then
             python3 -m unittest discover -s tests -p 'test_feature_control.py' -v
+            if [[ -f tests/test_orchestration.py ]]; then
+              python3 -m unittest discover -s tests -p 'test_orchestration.py' -v
+            fi
             node --check tools/feature_control/static/app.js
           fi
       - name: Reject whitespace and unresolved merge markers
