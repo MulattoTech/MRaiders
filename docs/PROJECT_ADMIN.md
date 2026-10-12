@@ -46,6 +46,13 @@ hasn't succeeded on the candidate PR, avoiding a permanently blocked branch.
 - [Actions runs](https://github.com/MulattoTech/MRaiders/actions)
 - [PR #1](https://github.com/MulattoTech/MRaiders/pull/1)
 
+**Dependency Graph:** Public visibility does not guarantee Dependency Graph was enabled.
+The October 11, 2026 PR run showed `Dependency review is not supported on this repository`.
+Open [Advanced Security](https://github.com/MulattoTech/MRaiders/settings/security_analysis),
+enable **Dependency Graph**, and then re-run the **Dependency review** job.
+Until enabled, the checked-in workflow explicitly warns and skips that optional
+security check rather than giving a false negative or blocking all PR work.
+
 The GitHub App connector's `admin` metadata does not grant it the
 `Administration:write` mutation interface or Projects V2 creation
 methods. Do not confuse committed automation scripts with actual remote

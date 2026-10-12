@@ -10,6 +10,29 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/dependency-review-action@v5
+      - name: Check dependency graph availability
+        id: support
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const pr = context.payload.pull_request;
+            const basehead = pr.base.sha + '...' + pr.head.sha;
+            try {
+              await github.request('GET /repos/{owner}/{repo}/dependency-graph/compare/{basehead}', {
+                owner, repo, basehead
+              });
+              core.setOutput('supported', 'true');
+            } catch (error) {
+              if (error.status === 403 || error.status === 404) {
+                core.warning('Dependency Graph is disabled or inaccessible: cannot run Dependency Review. Enable it in repository Settings > Security & quality > Advanced Security.');
+                core.setOutput('supported', 'false');
+              } else {
+                throw error;
+              }
+            }
+      - name: Review dependency changes
+        if: steps.support.outputs.supported == 'true'
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high

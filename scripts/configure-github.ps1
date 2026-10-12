@@ -57,6 +57,15 @@ if ($existing.Count -gt 0) {
 } else {
   $project = Invoke-Gh @('project','create','--owner',$Owner,'--title',$Title,'--format','json') | ConvertFrom-Json
 }
+# Security alerts and fixes require repository Administration permissions.
+foreach ($endpoint in @('vulnerability-alerts','automated-security-fixes')) {
+  try {
+    Invoke-Gh @('api','--method','PUT',"repos/$Repo/$endpoint") | Out-Null
+    Write-Host "Enabled repository security endpoint: $endpoint"
+  } catch {
+    Write-Warning "Cannot enable $endpoint via this account: $($_.Exception.Message)"
+  }
+}
 $projectNumber = [int]$project.number
 if ($projectNumber -le 0) { throw 'Could not determine GitHub Project number.' }
 Write-Host "Project: $($project.url) (#$projectNumber)"
