@@ -1,11 +1,41 @@
+# MRaiders â€” ARC Raiders companion + developer feature control
+
+> **Important:** This repository currently contains a historical Electron
+> overlay implementation on main, plus a native Qt modernization in PR #1.
+> No in-game overlay or third-party companion app is guaranteed to be
+> anti-cheat approved. Never distribute proprietary maps or claim game
+> integration that has not been tested or authorized.
+
+## Guided development workflow
+
+MRaiders uses the [MRaiders Development Project](https://github.com/users/MulattoTech/projects/2)
+as its canonical backlog, with structured feature intake, auditable AI
+changes, CI evidence and separate acceptance status.
+
+Run the **local Feature Control GUI** (Python 3.11+, existing gh login):
+
+    pwsh -NoProfile -File .\scripts\Start-MRaiders-FeatureControl.ps1
+
+Open http://127.0.0.1:8765/ to submit new capabilities, see prioritized
+P0/P1/P2 work, and link issues to project fields. No tokens are stored in
+the application. This is a developer tool, not a running game overlay.
+
+Docs: [Feature Control](docs/FEATURE_CONTROL.md) Â·
+[AI code provenance](docs/AI_PROVENANCE.md) Â·
+[Delivery playbook](docs/DELIVERY_PLAYBOOK.md)
+
+The Qt product implementation lives in draft PR #1 until accepted.
+
+---
+## Legacy Electron documentation (reference only)
 # Arc Raiders Hurricane / First Wave Cache Companion
 
 This project is a lightweight Electron companion for **Arc Raiders** that shows only **static, community-style cache candidate markers**. It supports both a game overlay view and a second-monitor companion view. It does **not** read memory, hook the game, inject code, scrape packets, or do any real-time detection.
 
 ## Safety Model
 
-- Transparent external overlay only
-- Separate second-monitor companion window using the same safe static data
+- Historical transparent external overlay (NOT independently approved by Embark)
+- Separate second-monitor companion window using the same previous static marker data
 - Title-based window alignment only
 - Static JSON data loaded from `/data`
 - No process memory access
@@ -115,3 +145,6 @@ Use the Windows portable target for actual overlay distribution:
 ```powershell
 npm run build:win
 ```
+
+**Current development preview:** Feature Control is on PR #17 and can be run
+from `C:\tools\dev\MRaiders-AuditControl` before it is merged to main.

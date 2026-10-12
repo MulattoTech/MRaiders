@@ -23,3 +23,10 @@ desktop.ini
 *.temp
 coverage/
 .cache/
+
+# Python Feature Control / AI audit
+__pycache__/
+*.pyc
+.pytest_cache/
+/audit/
+.mypy_cache/
