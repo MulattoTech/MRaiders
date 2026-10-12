@@ -5,6 +5,11 @@
 #include <QVariant>
 #include <QMap>
 #include <functional>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
+#include <QSet>
 
 namespace {
 bool fail(QString* error, const QString& reason) {
@@ -165,6 +170,125 @@ bool CatalogStore::planShortages(const QString& root, int amount,
         result.append({it.key(), int(it.value())});
     }
     *shortages = result;
+    if (error) error->clear();
+    return true;
+}
+
+QByteArray CatalogStore::exportPackage() const {
+    QJsonArray entries, recipes;
+    QSqlQuery e(db_);
+    if (!e.exec("SELECT id,kind,name,source,notes FROM catalog_entries ORDER BY id"))
+        return {};
+    while (e.next()) {
+        const QString id=e.value(0).toString();
+        QJsonObject row;
+        row["id"]=id;
+        row["kind"]=e.value(1).toString();
+        row["name"]=e.value(2).toString();
+        row["source"]=e.value(3).toString();
+        row["notes"]=e.value(4).toString();
+        row["owned"]=owned(id);
+        row["needed"]=needed(id);
+        entries.append(row);
+    }
+    QSqlQuery r(db_);
+    if (!r.exec("SELECT result_id,ingredient_id,quantity FROM catalog_recipes ORDER BY result_id,ingredient_id"))
+        return {};
+    while (r.next()) {
+        QJsonObject row;
+        row["result_id"]=r.value(0).toString();
+        row["ingredient_id"]=r.value(1).toString();
+        row["quantity"]=r.value(2).toInt();
+        recipes.append(row);
+    }
+    QJsonObject root;
+    root["format"]="mraiders-catalog";
+    root["schema_version"]=1;
+    root["entries"]=entries;
+    root["recipes"]=recipes;
+    return QJsonDocument(root).toJson(QJsonDocument::Indented);
+}
+
+bool CatalogStore::importPackage(const QByteArray& bytes, QString* error) {
+    constexpr int maxBytes=2*1024*1024;
+    if (bytes.isEmpty() || bytes.size()>maxBytes)
+        return fail(error, "Catalog package must be between 1 byte and 2 MiB");
+    QJsonParseError parseError;
+    const QJsonDocument document=QJsonDocument::fromJson(bytes,&parseError);
+    if (parseError.error!=QJsonParseError::NoError || !document.isObject())
+        return fail(error,"Invalid JSON object: "+parseError.errorString());
+    const QJsonObject root=document.object();
+    if (root.value("format").toString()!="mraiders-catalog" ||
+        root.value("schema_version").toInt(-1)!=1 ||
+        !root.value("entries").isArray() || !root.value("recipes").isArray())
+        return fail(error,"Unsupported catalog format or schema version");
+    const auto entries=root.value("entries").toArray();
+    const auto recipes=root.value("recipes").toArray();
+    if (entries.size()>5000 || recipes.size()>20000)
+        return fail(error,"Catalog package exceeds record limits");
+    QSet<QString> ids, recipeKeys;
+    for (const auto& v: entries) {
+        if (!v.isObject()) return fail(error,"Malformed catalog entry");
+        const auto e=v.toObject();
+        const QString id=e.value("id").toString();
+        const QString kind=e.value("kind").toString();
+        const QString name=e.value("name").toString();
+        if (!validId(id) || ids.contains(id) ||
+            (kind!="item" && kind!="blueprint" && kind!="quest") ||
+            name.trimmed().isEmpty() || name.size()>256 ||
+            !e.value("source").isString() || !e.value("notes").isString() ||
+            e.value("source").toString().size()>2048 ||
+            e.value("notes").toString().size()>4096)
+            return fail(error,"Invalid or duplicate catalog entry");
+        for(const QString& field: {"owned","needed"}) {
+            if (e.contains(field) &&
+                (!e.value(field).isDouble() || e.value(field).toDouble()<0 ||
+                 e.value(field).toDouble()>1000000 ||
+                 e.value(field).toDouble()!=int(e.value(field).toDouble())))
+                return fail(error,"Invalid quantity in catalog entry");
+        }
+        ids.insert(id);
+    }
+    for (const auto& v: recipes) {
+        if (!v.isObject()) return fail(error,"Malformed recipe");
+        const auto e=v.toObject();
+        const QString result=e.value("result_id").toString();
+        const QString ingredient=e.value("ingredient_id").toString();
+        const QString key=result+QString(QChar(0))+ingredient;
+        if (!validId(result) || !validId(ingredient) || result==ingredient ||
+            recipeKeys.contains(key) || !e.value("quantity").isDouble() ||
+            e.value("quantity").toDouble()<1 || e.value("quantity").toDouble()>100000 ||
+            e.value("quantity").toDouble()!=int(e.value("quantity").toDouble()))
+            return fail(error,"Invalid or duplicate recipe");
+        recipeKeys.insert(key);
+    }
+    if (!db_.transaction()) return fail(error,db_.lastError().text());
+    QString failure;
+    for (const auto& v:entries) {
+        const auto e=v.toObject();
+        CatalogEntry entry{e.value("id").toString(),e.value("kind").toString(),
+                           e.value("name").toString(),e.value("source").toString(),
+                           e.value("notes").toString()};
+        if (!upsert(entry,&failure) ||
+            (e.contains("owned") && !setOwned(entry.id,e.value("owned").toInt(),&failure)) ||
+            (e.contains("needed") && !setNeeded(entry.id,e.value("needed").toInt(),&failure))) {
+            db_.rollback();
+            return fail(error,"Import rolled back: "+failure);
+        }
+    }
+    for (const auto& v:recipes) {
+        const auto e=v.toObject();
+        if (!addRecipe(e.value("result_id").toString(),
+                       e.value("ingredient_id").toString(),
+                       e.value("quantity").toInt(),&failure)) {
+            db_.rollback();
+            return fail(error,"Import rolled back: "+failure);
+        }
+    }
+    if (!db_.commit()) {
+        db_.rollback();
+        return fail(error,"Import commit failed: "+db_.lastError().text());
+    }
     if (error) error->clear();
     return true;
 }

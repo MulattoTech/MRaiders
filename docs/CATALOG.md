@@ -16,3 +16,9 @@ The database resides in QStandardPaths::AppDataLocation/catalog.sqlite. The code
 The Item Library now has **Add Recipe Ingredient** and **Plan Crafting Shortages** actions. A selected result can be linked to ingredient IDs, with per-craft quantities. The planner recursively expands recipes, consumes already-owned quantities once, and lists unfulfilled leaf materials. Recipe cycles and expansion limits fail explicitly instead of showing misleading totals.
 
 A plan is a manual what-if result; it does not decrement persisted owned counts and does not claim to know actual ARC Raiders crafting definitions. Users supply any recipe relationships. The planner is not yet a full batch-production scheduler or automatic data importer.
+
+## Portable user-owned JSON packs
+
+Import and export buttons serialize `mraiders-catalog` schema v1 with user-entered entries, recipes, owned and needed counts. Imports are bounded to 2 MiB, 5,000 entries and 20,000 recipes. The importer checks IDs, kinds, record lengths, duplicate definitions and integer quantities before beginning a SQLite transaction. The entire import is rolled back if an ingredient references a missing record or a database write fails. Existing records are merged by stable ID; records not present in the incoming pack are preserved. Exported inventory quantities are personal data and should be shared deliberately.
+
+This is an offline local file interchange format, not a trusted/official ARC Raiders data source or remote community data feed.

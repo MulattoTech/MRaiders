@@ -17,6 +17,8 @@
 #include <QHBoxLayout>
 #include <QSignalBlocker>
 #include <QFileInfo>
+#include <QFile>
+#include <QFileDialog>
 
 CatalogPage::CatalogPage(QWidget* parent) : QWidget(parent) {
     const QString appDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -36,7 +38,14 @@ CatalogPage::CatalogPage(QWidget* parent) : QWidget(parent) {
     filter_->addItems({"All", "item", "blueprint", "quest"});
     auto* add = new QPushButton("Add Entry", this);
     add->setObjectName("catalogAdd");
+    auto* importButton = new QPushButton("Import Pack",this);
+    importButton->setObjectName("catalogImport");
+    auto* exportButton = new QPushButton("Export Pack",this);
+    exportButton->setObjectName("catalogExport");
     top->addWidget(search_, 2);top->addWidget(filter_);top->addWidget(add);
+    top->addWidget(importButton);top->addWidget(exportButton);
+    connect(importButton,&QPushButton::clicked,this,&CatalogPage::importDataPack);
+    connect(exportButton,&QPushButton::clicked,this,&CatalogPage::exportDataPack);
     layout->addLayout(top);
     results_ = new QTableWidget(this);
     results_->setObjectName("catalogTable");
@@ -120,6 +129,47 @@ void CatalogPage::saveCounts() {
     if(!store_->setOwned(id,owned_->value(),&error) || !store_->setNeeded(id,needed_->value(),&error))
         QMessageBox::warning(this,"Save counts",error);
     else status_->setText("Saved owned and needed counts for " + id);
+}
+
+void CatalogPage::importDataPack() {
+    const QString path = QFileDialog::getOpenFileName(
+        this,"Import user-maintained catalog",QString(),"MRaiders JSON (*.json)");
+    if (path.isEmpty()) return;
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(this,"Catalog import",file.errorString());
+        return;
+    }
+    if (file.size()>2*1024*1024) {
+        QMessageBox::warning(this,"Catalog import","Package exceeds 2 MiB limit.");
+        return;
+    }
+    const QByteArray contents=file.readAll();
+    QString error;
+    if (!store_->importPackage(contents,&error)) {
+        QMessageBox::warning(this,"Catalog import rejected",error);
+        return;
+    }
+    refresh();
+    status_->setText("Catalog package imported and validated.");
+}
+
+void CatalogPage::exportDataPack() {
+    const QString path = QFileDialog::getSaveFileName(
+        this,"Export local catalog","MRaiders-catalog.json","MRaiders JSON (*.json)");
+    if (path.isEmpty()) return;
+    const QByteArray data=store_->exportPackage();
+    if (data.isEmpty()) {
+        QMessageBox::warning(this,"Export error","Cannot read the catalog database.");
+        return;
+    }
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly|QIODevice::Truncate) ||
+        file.write(data)!=data.size()) {
+        QMessageBox::warning(this,"Export error",file.errorString());
+        return;
+    }
+    status_->setText("Export includes manually entered data and inventory counts.");
 }
 
 void CatalogPage::addRecipeIngredient() {
