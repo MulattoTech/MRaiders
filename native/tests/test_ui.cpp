@@ -3,6 +3,7 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QLineEdit>
+#include <QPushButton>
 #include <QListWidget>
 #include <QTabWidget>
 #include <QTreeWidget>
@@ -46,6 +47,11 @@ private slots:
         QCOMPARE(markers->count(), 0); // New map data is explicitly unknown, not fabricated.
     }
 
+    void calibrationActionsAreAvailable() {
+        MainWindow window;
+        QVERIFY(window.findChild<QPushButton*>("pickAnchorButton") != nullptr);
+        QVERIFY(window.findChild<QPushButton*>("resetAlignmentButton") != nullptr);
+    }
     void progressionChecklistIsInteractive() {
         MainWindow window;
         auto* tracker = window.findChild<QTreeWidget*>("progressionTree");

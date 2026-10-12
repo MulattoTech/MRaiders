@@ -1,6 +1,7 @@
 #pragma once
 #include "map_repository.h"
 #include "tracker_repository.h"
+#include "calibration.h"
 #include <QMainWindow>
 #include <QSettings>
 #include <QList>
@@ -28,6 +29,10 @@ private:
     void saveRoute();
     void importMapImage();
     void exportRoute();
+    void startCalibrationPick();
+    void finishCalibrationPick(const QPointF& imagePoint);
+    void clearCalibration();
+    void restoreCalibration(const QString& mapId);
     const MapData* activeMap() const;
     QList<MapData> maps_;
     QList<TrackerItem> trackerItems_;
@@ -42,4 +47,6 @@ private:
     QLabel* mapStatus_ = nullptr;
     MapView* view_ = nullptr;
     QString selectedId_;
+    QVector<CalibrationAnchor> calibrationAnchors_;
+    QPointF pendingMapAnchor_;
 };
