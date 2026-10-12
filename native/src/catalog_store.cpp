@@ -3,6 +3,8 @@
 #include <QSqlQuery>
 #include <QUuid>
 #include <QVariant>
+#include <QMap>
+#include <functional>
 
 namespace {
 bool fail(QString* error, const QString& reason) {
@@ -119,6 +121,52 @@ QList<QPair<QString,int>> CatalogStore::recipe(const QString& resultId) const {
     q.addBindValue(resultId);
     if (q.exec()) while(q.next()) rows.append({q.value(0).toString(),q.value(1).toInt()});
     return rows;
+}
+
+bool CatalogStore::planShortages(const QString& root, int amount,
+                                 QList<MaterialShortage>* shortages, QString* error) const {
+    if (!shortages || !validId(root) || amount <= 0 || amount > 1000000)
+        return fail(error, "Invalid planning request");
+    QMap<QString, qint64> missing;
+    QMap<QString, qint64> consumed;
+    QStringList stack;
+    int visits = 0;
+    std::function<bool(const QString&, qint64)> expand = [&](const QString& id, qint64 count) -> bool {
+        if (++visits > 1000 || count > 1000000)
+            return fail(error, "Recipe graph exceeds safe limits");
+        if (stack.contains(id))
+            return fail(error, "Recipe cycle: " + (stack + QStringList{id}).join(" -> "));
+        stack.append(id);
+        const qint64 available = qMax(qint64(0), qint64(owned(id)) - consumed.value(id));
+        const qint64 take = qMin(available, count);
+        consumed[id] += take;
+        const qint64 required = count - take;
+        if (required > 0) {
+            const auto ingredients = recipe(id);
+            if (ingredients.isEmpty()) {
+                missing[id] += required;
+            } else {
+                for (const auto& part : ingredients) {
+                    if (required > 1000000 / part.second ||
+                        !expand(part.first, required * part.second)) {
+                        stack.removeLast();
+                        return fail(error, error && !error->isEmpty() ? *error : "Recipe amount overflow");
+                    }
+                }
+            }
+        }
+        stack.removeLast();
+        return true;
+    };
+    if (!expand(root, amount)) return false;
+    QList<MaterialShortage> result;
+    for (auto it = missing.cbegin(); it != missing.cend(); ++it) {
+        if (it.value() > 1000000) return fail(error, "Shortage amount overflow");
+        result.append({it.key(), int(it.value())});
+    }
+    *shortages = result;
+    if (error) error->clear();
+    return true;
 }
 
 bool CatalogStore::countSet(const QString& table, const QString& id, int count, QString* error) {

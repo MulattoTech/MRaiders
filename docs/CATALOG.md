@@ -10,3 +10,9 @@ The database resides in QStandardPaths::AppDataLocation/catalog.sqlite. The code
 - catalog_integration: in-memory-compatible temporary SQLite path, search/filter, upsert, foreign keys, recipe constraints, stored count persistence, invalid-input rejection.
 - Existing Qt data and GUI integration tests now expect a fourth native tab.
 - Full functional GUI acceptance remains NOT_RUN pending a real Windows session and verified CI.
+
+## Crafting plan follow-up
+
+The Item Library now has **Add Recipe Ingredient** and **Plan Crafting Shortages** actions. A selected result can be linked to ingredient IDs, with per-craft quantities. The planner recursively expands recipes, consumes already-owned quantities once, and lists unfulfilled leaf materials. Recipe cycles and expansion limits fail explicitly instead of showing misleading totals.
+
+A plan is a manual what-if result; it does not decrement persisted owned counts and does not claim to know actual ARC Raiders crafting definitions. Users supply any recipe relationships. The planner is not yet a full batch-production scheduler or automatic data importer.
