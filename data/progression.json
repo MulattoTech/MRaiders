@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "source": "Manual companion checklists based on Embark Frozen Trail 2.0 release notes; not account data",
+  "items": [
+    {"id":"explore-pendola","group":"Frozen Trail","title":"Explore Pendola Pass","detail":"New map added October 8, 2026."},
+    {"id":"outpost-unlock","group":"Outpost","title":"Unlock the Outpost","detail":"Progress the Outpost unlock project and associated quest."},
+    {"id":"research-station","group":"Outpost","title":"Access the Research Station","detail":"Research Station unlocks through the Outpost."},
+    {"id":"furniture-designs","group":"Outpost","title":"Track Furniture Designs","detail":"Frozen Trail adds 100 designs; mark manually as your own milestone."},
+    {"id":"weapon-stencils","group":"Collection","title":"Find Weapon Stencils","detail":"Frozen Trail adds 14 stencil patterns."},
+    {"id":"new-quests","group":"Quests","title":"Work through new quests","detail":"Frozen Trail includes 22 new quests. This is a milestone, not a complete quest database."},
+    {"id":"reward-pass","group":"Progression","title":"Explore Reward Pass","detail":"Reward Points replace Cred and the new active-pass system replaces Raider Decks."},
+    {"id":"skill-tree","group":"Progression","title":"Plan updated skill tree","detail":"Skills changed in Frozen Trail; no builds claimed or imported."},
+    {"id":"frigate","group":"Events","title":"Learn Frigate map condition","detail":"New map condition introduced in Frozen Trail."},
+    {"id":"redirection","group":"Events","title":"Learn Redirection map condition","detail":"New map condition introduced in Frozen Trail."}
+  ]
+}

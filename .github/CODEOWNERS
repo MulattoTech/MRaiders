@@ -1,0 +1,5 @@
+# Maintainership and review hints; not a mandatory external-review gate.
+/* @MulattoTech
+/native/ @MulattoTech
+/.github/ @MulattoTech
+/data/ @MulattoTech

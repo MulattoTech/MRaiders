@@ -1,9 +1,22 @@
-This project can be opened in GitHub Codespaces for cloud-first editing and dependency management.
+# MRaiders Codespaces (C++/Qt)
 
-Notes:
+The default Codespace uses Microsoft's maintained C++ development-container
+image on Debian 12 and installs the Qt 6.4 API baseline **in the cloud only**.
+Qt 6.12 LTS is validated and packaged separately in Windows GitHub Actions.
 
-- `npm install` runs automatically when the codespace is created.
-- `scripts/bootstrap-codespace.sh` is the repeatable setup script used by `postCreateCommand`.
-- The post-create step also installs the Linux libraries Electron needs for `npm start` and `npm run smoke`.
-- Electron UI overlay behavior still needs Windows-local validation.
-- Use Codespaces for code changes, reviews, smoke checks, and packaging verification; use your local machine when you need to verify transparent overlay positioning, global hotkeys, and game-window tracking.
+On first create, the bootstrap configures CMake, builds, and runs Qt CTest.
+Subsequent checks:
+
+```bash
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
+QT_QPA_PLATFORM=offscreen ./build/native/MRaiders --smoke-test
+```
+
+This does not install SDKs or compilers on your Windows PC. No game execution
+or live capture is part of Codespaces testing.
+
+For legacy Electron experiments only, install Node in the container and run
+`MRAIDERS_BOOTSTRAP_LEGACY=1 bash scripts/bootstrap-codespace.sh`.
+Do not trigger a Codespaces rebuild mid-task unless an environment dependency
+requires it; preserve work and run checks first.

@@ -1,0 +1,25 @@
+name: Feature request
+description: Propose an MRaiders companion feature
+title: "[FEAT] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: value
+    attributes:
+      label: User value and acceptance criteria
+      description: Describe what would be usable and how to verify it.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Proposed priority
+      options:
+        - P0 - foundational
+        - P1 - high value
+        - P2 - later
+  - type: textarea
+    id: source
+    attributes:
+      label: Data rights and provenance
+      description: Include sources and permissions for any external game data/assets.

@@ -1,0 +1,8 @@
+{
+  "name": "Riven Tides",
+  "description": "Map registered for MRaiders; cache positions require independently verified contributions.",
+  "source": "No verified spawn coordinates bundled",
+  "updatedAt": "2026-10-11",
+  "accentColor": "#42b9ac",
+  "spawns": []
+}
