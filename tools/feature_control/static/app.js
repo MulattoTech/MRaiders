@@ -51,7 +51,7 @@ function renderBoard(){
     const link=document.createElement("a");link.href=item.url||"https://github.com/users/MulattoTech/projects/2";
     link.target="_blank";link.rel="noopener";link.textContent=item.title;card.append(link);
     const meta=document.createElement("div");meta.className="meta";
-    for(const [value,kind] of [[item.priority,"priority"],[item.status,"stage"],[item.workstream,"workstream"],[item.acceptance,"acceptance"]]){
+    for(const value of [item.priority,item.status,item.workstream,item.acceptance]){
       const tag=document.createElement("span");tag.className="tag "+(value||"").toLowerCase();tag.textContent=value||"—";meta.append(tag);
     }
     card.append(meta);$("board").append(card);
