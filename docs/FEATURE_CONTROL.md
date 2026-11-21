@@ -22,3 +22,12 @@ This is **working intake + prioritization + live project board**, not yet the la
 **Pre-merge launch path:** while PR #17 remains unmerged, run the launcher from
 `C:\tools\dev\MRaiders-AuditControl\scripts\Start-MRaiders-FeatureControl.ps1`.
 After safe integration into main, switch to the regular MRaiders repository path.
+
+## Audit & CI health panel (MR-16)
+
+The GUI reads GitHub's actual check-runs at the current **main** commit and
+displays the exact SHA, required governance checks, native checks (when available),
+and links to check results. Missing checks display `MISSING`, not green.
+Click **Refresh audit** to update without submitting a feature. This does not
+claim a green check is acceptance PASS. AI model and effort remain self-reported
+through commit trailers, and the audit panel explicitly notes that limitation.

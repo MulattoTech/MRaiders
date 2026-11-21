@@ -67,6 +67,15 @@
         <p class="feedback" id="message" role="status" aria-live="polite"></p>
       </form>
     </section>
+    <section class="panel" aria-label="Commit and CI audit health">
+      <div class="section-head"><div><h2>Audit &amp; CI health</h2>
+        <p>Exact main SHA, provenance declaration gate, and build checks. Not acceptance.</p></div>
+        <button id="refreshAudit" type="button">↻ Refresh audit</button></div>
+      <p id="auditSummary" role="status" aria-live="polite">Loading audit status…</p>
+      <div id="auditChecks" class="board"></div>
+      <p class="hint">AI model/effort are self-declared; checks cannot verify the actual model that wrote a line.
+      Missing checks are unknown, not passing. Acceptance remains an independent Project field.</p>
+    </section>
     <section class="panel backlog" aria-label="Live GitHub Project board">
       <div class="section-head"><div><h2>Delivery board</h2><p>Project #2 is authoritative. Issues are implementation records—not the dashboard.</p></div><button type="button" id="refresh">↻ Refresh</button></div>
       <div class="metrics" id="metrics"><span>Loading work items…</span></div>
