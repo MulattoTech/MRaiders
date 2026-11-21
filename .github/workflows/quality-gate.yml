@@ -1,0 +1,55 @@
+name: MRaiders Universal Quality
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: MRaiders Quality Gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Verify existing Electron reference, when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f package.json ]]; then
+            npm ci --ignore-scripts --no-audit --no-fund
+            npm test
+            npm run validate:data
+          fi
+      - name: Verify native Qt build, when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f CMakeLists.txt ]]; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends cmake ninja-build qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev
+            cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+            cmake --build build --parallel 2
+            ctest --test-dir build --output-on-failure
+          fi
+      - name: Verify Feature Control and audit components, when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f tools/feature_control/core.py ]]; then
+            python3 -m unittest discover -s tests -p 'test_feature_control.py' -v
+            node --check tools/feature_control/static/app.js
+          fi
+      - name: Reject whitespace and unresolved merge markers
+        shell: bash
+        run: |
+          git diff --check
+          if git grep -n -E '^(<<<<<<< |=======|>>>>>>> )' -- ':!package-lock.json'; then
+            echo 'Unresolved conflict marker found' >&2
+            exit 1
+          fi

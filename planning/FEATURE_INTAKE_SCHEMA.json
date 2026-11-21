@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MRaiders feature intake",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "outcome",
+    "acceptance",
+    "workstream",
+    "category",
+    "impact",
+    "urgency",
+    "effort",
+    "risk",
+    "target_model",
+    "target_reasoning"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 140
+    },
+    "outcome": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 3000
+    },
+    "acceptance": {
+      "type": "string",
+      "minLength": 12,
+      "maxLength": 4000
+    },
+    "constraints": {
+      "type": "string",
+      "maxLength": 3000
+    },
+    "workstream": {
+      "enum": [
+        "Infrastructure",
+        "Native",
+        "Maps",
+        "Data",
+        "UX",
+        "Progression",
+        "Planning"
+      ]
+    },
+    "category": {
+      "enum": [
+        "Feature",
+        "Bug",
+        "Security",
+        "Infrastructure",
+        "Quality",
+        "Documentation"
+      ]
+    },
+    "impact": {
+      "enum": [
+        "High",
+        "Medium",
+        "Low"
+      ]
+    },
+    "urgency": {
+      "enum": [
+        "High",
+        "Medium",
+        "Low"
+      ]
+    },
+    "effort": {
+      "enum": [
+        "Small",
+        "Medium",
+        "Large"
+      ]
+    },
+    "risk": {
+      "enum": [
+        "High",
+        "Medium",
+        "Low"
+      ]
+    },
+    "dependencies": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "target_model": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "target_reasoning": {
+      "enum": [
+        "unassigned",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "not-exposed"
+      ]
+    },
+    "priority": {
+      "enum": [
+        "P0",
+        "P1",
+        "P2"
+      ]
+    },
+    "justification": {
+      "type": "string",
+      "maxLength": 500
+    }
+  }
+}

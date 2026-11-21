@@ -1,0 +1,82 @@
+name: AI provenance
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: provenance-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  audit:
+    name: Validate AI provenance
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Determine audited commit range
+        id: range
+        shell: bash
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_HEAD: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$PR_BASE" && -n "$PR_HEAD" ]]; then
+            echo "base=$PR_BASE" >> "$GITHUB_OUTPUT"
+            echo "head=$PR_HEAD" >> "$GITHUB_OUTPUT"
+          elif [[ -n "$PUSH_BEFORE" && "$PUSH_BEFORE" != "0000000000000000000000000000000000000000" ]]; then
+            echo "base=$PUSH_BEFORE" >> "$GITHUB_OUTPUT"
+            echo "head=$PUSH_HEAD" >> "$GITHUB_OUTPUT"
+          else
+            echo "base=$PUSH_HEAD^" >> "$GITHUB_OUTPUT"
+            echo "head=$PUSH_HEAD" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Audit commits and code line ranges
+        env:
+          AUDIT_BASE: ${{ steps.range.outputs.base }}
+          AUDIT_HEAD: ${{ steps.range.outputs.head }}
+        run: |
+          mkdir -p audit
+          python -m tools.audit.provenance report --base "$AUDIT_BASE" --head "$AUDIT_HEAD" --json audit/audit.json --markdown audit/audit.md
+      - name: Preserve per-commit audit ledger
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mraiders-ai-provenance
+          path: audit/
+          if-no-files-found: warn
+          retention-days: 90
+  note:
+    name: Publish GitHub PR audit note
+    needs: audit
+    if: ${{ github.event_name == 'pull_request' && needs.audit.result == 'success' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: mraiders-ai-provenance
+          path: audit
+      - name: Add once per audited head SHA (no fabricated model metadata)
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs=require('fs');
+            const body=fs.readFileSync('audit/audit.md','utf8').slice(0,60000);
+            const marker='<!-- mraiders-audit:'+context.payload.pull_request.head.sha+' -->';
+            const {owner,repo}=context.repo;
+            const issue_number=context.issue.number;
+            const comments=await github.paginate(github.rest.issues.listComments,{owner,repo,issue_number,per_page:100});
+            if(!comments.some(c=>c.body?.includes(marker))){
+              await github.rest.issues.createComment({owner,repo,issue_number,body});
+            }
