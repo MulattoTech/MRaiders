@@ -70,3 +70,32 @@ def create_feature(spec:Feature):
                 "warning":f"Issue created; Project reconciliation needed: {e}"}
     return {"ok":True,"issue_url":url,"issue_number":number,"feature_id":f"MR-{number}",
             "project_url":"https://github.com/users/MulattoTech/projects/2"}
+
+def audit_health():
+    """Read-only dashboard of exact main commit checks; no inferred acceptance."""
+    branch=gh("api",f"repos/{REPO}/branches/main")
+    sha=(branch.get("commit") or {}).get("sha","")
+    if not sha:
+        raise RuntimeError("Could not identify the main branch revision")
+    response=gh("api",f"repos/{REPO}/commits/{sha}/check-runs?per_page=100")
+    targets={
+        "MRaiders Quality Gate",
+        "Validate AI provenance",
+        "Feature Control tests",
+        "Qt/Linux build and CTest",
+        "Qt 6.12/Windows package",
+        "analyze-cpp"
+    }
+    runs=[]
+    for item in response.get("check_runs",[]):
+        if item.get("name") not in targets: continue
+        runs.append({
+            "name":item["name"],
+            "status":item.get("status","unknown"),
+            "conclusion":item.get("conclusion") or "NOT_RUN",
+            "url":item.get("html_url") or "",
+            "completed_at":item.get("completed_at")
+        })
+    return {"branch":"main","sha":sha,"checks":runs,
+            "audit_declared_only":True,
+            "note":"CI verifies required declaration format and changed-line hunks, not actual AI identity or user acceptance."}
